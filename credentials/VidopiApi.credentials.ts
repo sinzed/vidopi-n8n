@@ -8,7 +8,7 @@ import {
 class VidopiApi implements ICredentialType {
   name = 'vidopiApi';
   displayName = 'Vidopi API';
-  documentationUrl = 'https://vidopi.com/api/docs';
+  documentationUrl = 'https://dashboard.vidopi.com/api-docs';
   properties: INodeProperties[] = [
     {
       displayName: 'API Key',
@@ -27,7 +27,7 @@ class VidopiApi implements ICredentialType {
     type: 'generic',
     properties: {
       headers: {
-        Authorization: '=Bearer {{$credentials.apiKey}}',
+        'X-API-Key': '={{$credentials.apiKey}}',
       },
     },
   };
@@ -35,11 +35,8 @@ class VidopiApi implements ICredentialType {
   test: ICredentialTestRequest = {
     request: {
       baseURL: 'https://api.vidopi.com',
-      url: '/upload-video/',
-      method: 'POST',
-      body: {
-        video_url: 'test',
-      },
+      url: '/apikey-test',
+      method: 'GET',
     },
   };
 }

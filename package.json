@@ -9,7 +9,7 @@
     "logo.png"
   ],
   "scripts": {
-    "build": "tsc && find dist -name '*.js' -type f -exec sed -i '/Object.defineProperty(exports, \"__esModule\"/d' {} \\;",
+    "build": "tsc && find dist -name '*.js' -type f -exec sed -i '/Object.defineProperty(exports, \"__esModule\"/d' {} \\; && cp logo.png dist/nodes/Vidopi/UploadVideo/ && cp logo.png dist/nodes/Vidopi/CutVideo/ && cp logo.png dist/nodes/Vidopi/MergeVideos/ && cp logo.png dist/nodes/Vidopi/ResizeVideo/ && cp logo.png dist/nodes/Vidopi/TaskStatus/",
     "dev": "n8n"
   },
   "keywords": [
