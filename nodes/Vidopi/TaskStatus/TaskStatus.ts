@@ -50,6 +50,9 @@ class TaskStatus implements INodeType {
         const response = await this.helpers.httpRequest({
           method: 'GET',
           url: `https://api.vidopi.com/task-status/${taskId}`,
+          headers: {
+            'X-API-Key': credentials.apiKey as string,
+          },
           json: true,
         });
         returnData.push({ json: response });

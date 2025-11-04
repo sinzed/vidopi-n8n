@@ -77,6 +77,9 @@ class UploadVideo implements INodeType {
         const response = await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/upload-video/',
+          headers: {
+            'X-API-Key': credentials.apiKey as string,
+          },
           body,
           json: true,
         });

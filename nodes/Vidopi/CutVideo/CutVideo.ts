@@ -27,8 +27,8 @@ class CutVideo implements INodeType {
     ],
     properties: [
       {
-        displayName: 'Video URL',
-        name: 'videoUrl',
+        displayName: 'Public Link',
+        name: 'publicLink',
         type: 'string',
         default: '',
         required: true,
@@ -77,7 +77,7 @@ class CutVideo implements INodeType {
 
     for (let i = 0; i < items.length; i++) {
       try {
-        const videoUrl = this.getNodeParameter('videoUrl', i) as string;
+        const publicLink = this.getNodeParameter('publicLink', i) as string;
         const startTime = this.getNodeParameter('startTime', i) as number;
         const endTime = this.getNodeParameter('endTime', i) as number;
         const additionalFields = this.getNodeParameter('additionalFields', i) as {
@@ -85,7 +85,7 @@ class CutVideo implements INodeType {
         };
 
         const body: any = {
-          video_url: videoUrl,
+          public_link: publicLink,
           start_time: startTime,
           end_time: endTime,
         };
@@ -97,6 +97,9 @@ class CutVideo implements INodeType {
         const response = await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/cut-video/',
+          headers: {
+            'X-API-Key': credentials.apiKey as string,
+          },
           body,
           json: true,
         });

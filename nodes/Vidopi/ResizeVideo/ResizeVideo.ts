@@ -109,6 +109,9 @@ class ResizeVideo implements INodeType {
         const response = await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/resize-video/',
+          headers: {
+            'X-API-Key': credentials.apiKey as string,
+          },
           body,
           json: true,
         });
