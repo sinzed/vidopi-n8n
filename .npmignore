@@ -1,0 +1,15 @@
+src/
+nodes/
+credentials/
+*.ts
+!*.d.ts
+tsconfig.json
+.gitignore
+README.md
+n8n-moviepy/
+python/
+*.log
+.DS_Store
+.env
+.env.local
+

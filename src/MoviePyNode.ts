@@ -54,7 +54,7 @@ export class MoviePyNode implements INodeType {
         ]);
         returnData.push({ json: { success: true, inputPath, outputPath } });
       } catch (error) {
-        returnData.push({ json: { success: false, error: error.message, inputPath, outputPath } });
+        returnData.push({ json: { success: false, error: error instanceof Error ? error.message : String(error), inputPath, outputPath } });
       }
     }
     return [returnData];

@@ -1,20 +1,41 @@
 {
-  "name": "n8n-nodes-moviepy",
-  "version": "0.1.0",
-  "description": "n8n node to work with MoviePy in Python",
+  "name": "n8n-nodes-vidopi",
+  "version": "1.0.0",
+  "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "n8n"
   },
-  "keywords": ["n8n", "node", "moviepy", "python"],
+  "keywords": [
+    "n8n",
+    "n8n-community-node",
+    "vidopi",
+    "video",
+    "video-processing",
+    "api"
+  ],
   "author": "",
   "license": "MIT",
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "nodes": [
+      "dist/nodes/Vidopi/UploadVideo/UploadVideo.js",
+      "dist/nodes/Vidopi/CutVideo/CutVideo.js",
+      "dist/nodes/Vidopi/MergeVideos/MergeVideos.js",
+      "dist/nodes/Vidopi/ResizeVideo/ResizeVideo.js",
+      "dist/nodes/Vidopi/TaskStatus/TaskStatus.js"
+    ],
+    "credentials": [
+      "dist/credentials/VidopiApi.credentials.js"
+    ]
+  },
   "dependencies": {
-    "n8n-workflow": "^1.0.0",
-    "n8n-core": "^1.0.0"
+    "n8n-workflow": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
   }
 } 
