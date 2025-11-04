@@ -9,7 +9,7 @@ class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Upload Video',
     name: 'vidopiUploadVideo',
-    icon: 'file:vidopi.svg',
+    icon: 'file:logo.png',
     group: ['transform'],
     version: 1,
     subtitle: '={{$parameter["operation"]}}',
@@ -95,5 +95,5 @@ class UploadVideo implements INodeType {
 }
 
 // Export for CommonJS
-module.exports = UploadVideo;
+exports.UploadVideo = UploadVideo;
 

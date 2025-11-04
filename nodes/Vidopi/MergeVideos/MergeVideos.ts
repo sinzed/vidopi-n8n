@@ -9,7 +9,7 @@ class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Merge Videos',
     name: 'vidopiMergeVideos',
-    icon: 'file:vidopi.svg',
+    icon: 'file:logo.png',
     group: ['transform'],
     version: 1,
     subtitle: 'Merge two videos together',
@@ -128,5 +128,5 @@ class MergeVideos implements INodeType {
 }
 
 // Export for CommonJS
-module.exports = MergeVideos;
+exports.MergeVideos = MergeVideos;
 

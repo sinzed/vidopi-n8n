@@ -9,7 +9,7 @@ class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Resize Video',
     name: 'vidopiResizeVideo',
-    icon: 'file:vidopi.svg',
+    icon: 'file:logo.png',
     group: ['transform'],
     version: 1,
     subtitle: 'Resize video dimensions',
@@ -127,5 +127,5 @@ class ResizeVideo implements INodeType {
 }
 
 // Export for CommonJS
-module.exports = ResizeVideo;
+exports.ResizeVideo = ResizeVideo;
 

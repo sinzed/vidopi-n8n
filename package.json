@@ -1,14 +1,15 @@
 {
   "name": "n8n-nodes-vidopi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "logo.png"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && find dist -name '*.js' -type f -exec sed -i '/Object.defineProperty(exports, \"__esModule\"/d' {} \\;",
     "dev": "n8n"
   },
   "keywords": [

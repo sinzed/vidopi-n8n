@@ -45,5 +45,5 @@ class VidopiApi implements ICredentialType {
 }
 
 // Export for CommonJS
-module.exports = VidopiApi;
+exports.VidopiApi = VidopiApi;
 

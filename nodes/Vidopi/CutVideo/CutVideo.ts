@@ -9,7 +9,7 @@ class CutVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Cut Video',
     name: 'vidopiCutVideo',
-    icon: 'file:vidopi.svg',
+    icon: 'file:logo.png',
     group: ['transform'],
     version: 1,
     subtitle: 'Cut a segment from a video',
@@ -115,5 +115,5 @@ class CutVideo implements INodeType {
 }
 
 // Export for CommonJS
-module.exports = CutVideo;
+exports.CutVideo = CutVideo;
 
