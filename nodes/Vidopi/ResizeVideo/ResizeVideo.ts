@@ -5,7 +5,7 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
-export class ResizeVideo implements INodeType {
+class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Resize Video',
     name: 'vidopiResizeVideo',
@@ -126,5 +126,6 @@ export class ResizeVideo implements INodeType {
   }
 }
 
-export default ResizeVideo;
+// Export for CommonJS
+module.exports = ResizeVideo;
 

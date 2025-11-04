@@ -5,7 +5,7 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
-export class TaskStatus implements INodeType {
+class TaskStatus implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Task Status',
     name: 'vidopiTaskStatus',
@@ -66,5 +66,6 @@ export class TaskStatus implements INodeType {
   }
 }
 
-export default TaskStatus;
+// Export for CommonJS
+module.exports = TaskStatus;
 

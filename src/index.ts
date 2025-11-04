@@ -1,9 +1,3 @@
-// Export Vidopi nodes
-export { UploadVideo } from '../nodes/Vidopi/UploadVideo/UploadVideo';
-export { CutVideo } from '../nodes/Vidopi/CutVideo/CutVideo';
-export { MergeVideos } from '../nodes/Vidopi/MergeVideos/MergeVideos';
-export { ResizeVideo } from '../nodes/Vidopi/ResizeVideo/ResizeVideo';
-export { TaskStatus } from '../nodes/Vidopi/TaskStatus/TaskStatus';
-
-// Export Vidopi credentials
-export { VidopiApi } from '../credentials/VidopiApi.credentials'; 
+// Note: n8n loads nodes and credentials directly from the paths specified in package.json
+// This index.ts file is kept for compatibility but the exports are not required for n8n
+// The actual exports are done via module.exports in each individual file 

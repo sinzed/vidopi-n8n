@@ -5,7 +5,7 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
-export class UploadVideo implements INodeType {
+class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Upload Video',
     name: 'vidopiUploadVideo',
@@ -94,5 +94,6 @@ export class UploadVideo implements INodeType {
   }
 }
 
-export default UploadVideo;
+// Export for CommonJS
+module.exports = UploadVideo;
 

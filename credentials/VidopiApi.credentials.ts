@@ -5,7 +5,7 @@ import {
   INodeProperties,
 } from 'n8n-workflow';
 
-export class VidopiApi implements ICredentialType {
+class VidopiApi implements ICredentialType {
   name = 'vidopiApi';
   displayName = 'Vidopi API';
   documentationUrl = 'https://vidopi.com/api/docs';
@@ -44,5 +44,6 @@ export class VidopiApi implements ICredentialType {
   };
 }
 
-export default VidopiApi;
+// Export for CommonJS
+module.exports = VidopiApi;
 

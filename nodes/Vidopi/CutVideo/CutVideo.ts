@@ -5,7 +5,7 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
-export class CutVideo implements INodeType {
+class CutVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Cut Video',
     name: 'vidopiCutVideo',
@@ -114,5 +114,6 @@ export class CutVideo implements INodeType {
   }
 }
 
-export default CutVideo;
+// Export for CommonJS
+module.exports = CutVideo;
 

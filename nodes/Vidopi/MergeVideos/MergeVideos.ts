@@ -5,7 +5,7 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
-export class MergeVideos implements INodeType {
+class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Merge Videos',
     name: 'vidopiMergeVideos',
@@ -127,5 +127,6 @@ export class MergeVideos implements INodeType {
   }
 }
 
-export default MergeVideos;
+// Export for CommonJS
+module.exports = MergeVideos;
 
