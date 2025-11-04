@@ -109,7 +109,7 @@ export class MergeVideos implements INodeType {
 
         const response = await this.helpers.httpRequest({
           method: 'POST',
-          url: `${credentials.baseUrl}/merge-video/`,
+          url: 'https://api.vidopi.com/merge-video/',
           body,
           json: true,
         });
@@ -126,4 +126,6 @@ export class MergeVideos implements INodeType {
     return [returnData];
   }
 }
+
+export default MergeVideos;
 

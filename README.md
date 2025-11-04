@@ -24,7 +24,8 @@ An n8n custom node package for interacting with the Vidopi video processing API.
 3. Configure your Vidopi API credentials:
    - Go to Credentials in n8n
    - Add a new "Vidopi API" credential
-   - Enter your API key and base URL (default: https://api.vidopi.com)
+   - Enter your API key (get your API key from https://vidopi.com - free tier available)
+   - The base URL is automatically set to https://api.vidopi.com
    - Save the credentials
 
 4. Use the nodes in your workflows:
@@ -125,8 +126,8 @@ Check the status and get results of asynchronous video processing tasks.
 
 All nodes require Vidopi API credentials:
 
-- **API Key**: Your Vidopi API key
-- **Base URL**: The base URL of the Vidopi API (default: https://api.vidopi.com)
+- **API Key**: Your Vidopi API key. Get your API key from [https://vidopi.com](https://vidopi.com) - they offer a free tier which works for most projects
+- **Base URL**: Fixed to https://api.vidopi.com (users cannot change this)
 
 ## Usage Examples
 

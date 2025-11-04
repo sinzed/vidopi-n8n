@@ -108,7 +108,7 @@ export class ResizeVideo implements INodeType {
 
         const response = await this.helpers.httpRequest({
           method: 'POST',
-          url: `${credentials.baseUrl}/resize-video/`,
+          url: 'https://api.vidopi.com/resize-video/',
           body,
           json: true,
         });
@@ -125,4 +125,6 @@ export class ResizeVideo implements INodeType {
     return [returnData];
   }
 }
+
+export default ResizeVideo;
 

@@ -96,7 +96,7 @@ export class CutVideo implements INodeType {
 
         const response = await this.helpers.httpRequest({
           method: 'POST',
-          url: `${credentials.baseUrl}/cut-video/`,
+          url: 'https://api.vidopi.com/cut-video/',
           body,
           json: true,
         });
@@ -113,4 +113,6 @@ export class CutVideo implements INodeType {
     return [returnData];
   }
 }
+
+export default CutVideo;
 

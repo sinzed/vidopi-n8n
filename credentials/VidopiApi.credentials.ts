@@ -19,15 +19,7 @@ export class VidopiApi implements ICredentialType {
       },
       default: '',
       required: true,
-      description: 'Your Vidopi API key',
-    },
-    {
-      displayName: 'Base URL',
-      name: 'baseUrl',
-      type: 'string',
-      default: 'https://api.vidopi.com',
-      required: true,
-      description: 'The base URL of the Vidopi API',
+      description: 'Your Vidopi API key. Get your API key from https://vidopi.com (free tier available)',
     },
   ];
 
@@ -42,7 +34,7 @@ export class VidopiApi implements ICredentialType {
 
   test: ICredentialTestRequest = {
     request: {
-      baseURL: '={{$credentials.baseUrl}}',
+      baseURL: 'https://api.vidopi.com',
       url: '/upload-video/',
       method: 'POST',
       body: {
@@ -51,4 +43,6 @@ export class VidopiApi implements ICredentialType {
     },
   };
 }
+
+export default VidopiApi;
 

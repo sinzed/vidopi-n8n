@@ -76,7 +76,7 @@ export class UploadVideo implements INodeType {
 
         const response = await this.helpers.httpRequest({
           method: 'POST',
-          url: `${credentials.baseUrl}/upload-video/`,
+          url: 'https://api.vidopi.com/upload-video/',
           body,
           json: true,
         });
@@ -93,4 +93,6 @@ export class UploadVideo implements INodeType {
     return [returnData];
   }
 }
+
+export default UploadVideo;
 

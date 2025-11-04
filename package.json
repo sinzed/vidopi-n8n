@@ -1,9 +1,12 @@
 {
   "name": "n8n-nodes-vidopi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "n8n"
@@ -11,6 +14,8 @@
   "keywords": [
     "n8n",
     "n8n-community-node",
+    "n8n-community-node-packag",
+    "n8n-community-node-package",
     "vidopi",
     "video",
     "video-processing",
@@ -21,14 +26,14 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "dist/nodes/Vidopi/UploadVideo/UploadVideo.js",
-      "dist/nodes/Vidopi/CutVideo/CutVideo.js",
-      "dist/nodes/Vidopi/MergeVideos/MergeVideos.js",
-      "dist/nodes/Vidopi/ResizeVideo/ResizeVideo.js",
-      "dist/nodes/Vidopi/TaskStatus/TaskStatus.js"
+      "./dist/nodes/Vidopi/UploadVideo/UploadVideo.js",
+      "./dist/nodes/Vidopi/CutVideo/CutVideo.js",
+      "./dist/nodes/Vidopi/MergeVideos/MergeVideos.js",
+      "./dist/nodes/Vidopi/ResizeVideo/ResizeVideo.js",
+      "./dist/nodes/Vidopi/TaskStatus/TaskStatus.js"
     ],
     "credentials": [
-      "dist/credentials/VidopiApi.credentials.js"
+      "./dist/credentials/VidopiApi.credentials.js"
     ]
   },
   "dependencies": {

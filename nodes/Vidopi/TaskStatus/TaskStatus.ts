@@ -49,7 +49,7 @@ export class TaskStatus implements INodeType {
 
         const response = await this.helpers.httpRequest({
           method: 'GET',
-          url: `${credentials.baseUrl}/task-status/${taskId}`,
+          url: `https://api.vidopi.com/task-status/${taskId}`,
           json: true,
         });
         returnData.push({ json: response });
@@ -65,4 +65,6 @@ export class TaskStatus implements INodeType {
     return [returnData];
   }
 }
+
+export default TaskStatus;
 
