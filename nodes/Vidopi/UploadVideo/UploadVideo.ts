@@ -66,24 +66,96 @@ class UploadVideo implements INodeType {
           publicLink?: boolean;
         };
 
-        const body: any = {
-          video_url: videoFile,
-        };
-
-        if (additionalFields.publicLink !== undefined) {
-          body.public_link = additionalFields.publicLink;
+        let binaryPropertyName = 'data';
+        let fileName = 'video.mp4';
+        
+        // Check if we have binary data from previous node
+        const binaryData = items[i].binary;
+        
+        if (binaryData && binaryData[binaryPropertyName]) {
+          // Use binary data from previous node
+          fileName = binaryData[binaryPropertyName].fileName || fileName;
+        } else if (videoFile) {
+                      // Download file from URL first, then upload
+          try {
+            const downloadResponse = await this.helpers.httpRequest({
+              method: 'GET',
+              url: videoFile,
+            });
+            
+            // Extract filename from URL
+            fileName = videoFile.split('/').pop() || videoFile.split('\\').pop() || 'video.mp4';
+            
+            // Convert response to buffer for upload
+            let fileBuffer: Buffer;
+            if (Buffer.isBuffer(downloadResponse)) {
+              fileBuffer = downloadResponse;
+            } else if (typeof downloadResponse === 'string') {
+              fileBuffer = Buffer.from(downloadResponse, 'binary');
+            } else {
+              fileBuffer = Buffer.from(JSON.stringify(downloadResponse));
+            }
+            
+            // Prepare multipart form data using FormData-like structure
+            const FormData = require('form-data');
+            const formData = new FormData();
+            formData.append('file', fileBuffer, {
+              filename: fileName,
+              contentType: 'video/mp4',
+            });
+            
+            if (additionalFields.publicLink !== undefined) {
+              formData.append('public_link', additionalFields.publicLink.toString());
+            }
+            
+            const response = await this.helpers.httpRequest({
+              method: 'POST',
+              url: 'https://api.vidopi.com/upload-video/',
+              headers: {
+                'X-API-Key': credentials.apiKey as string,
+                ...formData.getHeaders(),
+              },
+              body: formData,
+            });
+            
+            // Parse JSON response
+            const jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+            returnData.push({ json: jsonResponse });
+            continue;
+          } catch (error) {
+            throw new Error(`Failed to download or upload video: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        } else {
+          throw new Error('No video file provided. Please provide a file URL or connect a node that outputs binary data.');
         }
 
-        const response = await this.helpers.httpRequest({
-          method: 'POST',
-          url: 'https://api.vidopi.com/upload-video/',
-          headers: {
-            'X-API-Key': credentials.apiKey as string,
-          },
-          body,
-          json: true,
-        });
-        returnData.push({ json: response });
+        // If we have binary data, upload it
+        if (binaryData && binaryData[binaryPropertyName]) {
+          const FormData = require('form-data');
+          const formData = new FormData();
+          
+          formData.append('file', Buffer.from(binaryData[binaryPropertyName].data, 'base64'), {
+            filename: fileName,
+            contentType: binaryData[binaryPropertyName].mimeType || 'video/mp4',
+          });
+          
+          if (additionalFields.publicLink !== undefined) {
+            formData.append('public_link', additionalFields.publicLink.toString());
+          }
+          
+          const response = await this.helpers.httpRequest({
+            method: 'POST',
+            url: 'https://api.vidopi.com/upload-video/',
+            headers: {
+              'X-API-Key': credentials.apiKey as string,
+              ...formData.getHeaders(),
+            },
+            body: formData,
+          });
+          
+          const jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+          returnData.push({ json: jsonResponse });
+        }
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });

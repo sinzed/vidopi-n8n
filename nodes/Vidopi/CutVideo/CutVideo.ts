@@ -5,6 +5,48 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
+async function pollTaskStatus(
+  executeFunctions: IExecuteFunctions,
+  taskId: string,
+  credentials: any,
+  maxAttempts: number = 120 // 10 minutes max (120 * 5 seconds)
+): Promise<any> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const statusResponse = await executeFunctions.helpers.httpRequest({
+        method: 'GET',
+        url: `https://api.vidopi.com/task-status/${taskId}`,
+        headers: {
+          'X-API-Key': credentials.apiKey as string,
+        },
+        json: true,
+      });
+
+      // Check if task is complete
+      if (statusResponse.status === 'SUCCESS') {
+        return statusResponse;
+      } else if (statusResponse.status === 'FAILED') {
+        throw new Error(`Task failed: ${JSON.stringify(statusResponse.result?.error || statusResponse.result)}`);
+      }
+
+      // Wait 5 seconds before next poll
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (error) {
+      // If it's a task failure error, throw it
+      if (error instanceof Error && error.message.includes('Task failed')) {
+        throw error;
+      }
+      // Otherwise, continue polling (might be temporary network issue)
+      if (attempt === maxAttempts - 1) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+
+  throw new Error('Task timed out after 10 minutes');
+}
+
 class CutVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Cut Video',
@@ -94,6 +136,7 @@ class CutVideo implements INodeType {
           body.output_format = additionalFields.outputFormat;
         }
 
+        // Start the cut video task
         const response = await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/cut-video/',
@@ -103,7 +146,25 @@ class CutVideo implements INodeType {
           body,
           json: true,
         });
-        returnData.push({ json: response });
+
+        // Extract task ID from response
+        const taskId = response.task_id;
+        if (!taskId) {
+          throw new Error('No task ID returned from API');
+        }
+
+        // Poll for task completion
+        const finalResult = await pollTaskStatus(this, taskId, credentials);
+
+        // Return the final result
+        returnData.push({ 
+          json: {
+            task_id: taskId,
+            status: finalResult.status,
+            result: finalResult.result,
+            download_url: finalResult.download_url,
+          }
+        });
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });
