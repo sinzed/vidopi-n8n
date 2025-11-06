@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-vidopi",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "logo.png"
   ],
   "scripts": {
-    "build": "tsc && find dist -name '*.js' -type f -exec sed -i '/Object.defineProperty(exports, \"__esModule\"/d' {} \\; && cp logo.png dist/nodes/Vidopi/UploadVideo/ && cp logo.png dist/nodes/Vidopi/CutVideo/ && cp logo.png dist/nodes/Vidopi/MergeVideos/ && cp logo.png dist/nodes/Vidopi/ResizeVideo/ && cp logo.png dist/nodes/Vidopi/TaskStatus/",
+    "build": "tsc && find dist -name '*.js' -type f -exec sed -i '' '/Object.defineProperty(exports, \"__esModule\"/d' {} \\; && cp logo.png dist/nodes/Vidopi/UploadVideo/ && cp logo.png dist/nodes/Vidopi/CutVideo/ && cp logo.png dist/nodes/Vidopi/MergeVideos/ && cp logo.png dist/nodes/Vidopi/ResizeVideo/ && cp logo.png dist/nodes/Vidopi/TaskStatus/",
     "dev": "n8n"
   },
   "keywords": [
