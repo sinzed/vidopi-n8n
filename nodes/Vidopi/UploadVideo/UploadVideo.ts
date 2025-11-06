@@ -4,6 +4,7 @@ import {
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
+import FormData from 'form-data';
 
 class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
@@ -66,7 +67,7 @@ class UploadVideo implements INodeType {
           publicLink?: boolean;
         };
 
-        let binaryPropertyName = 'data';
+        const binaryPropertyName = 'data';
         let fileName = 'video.mp4';
         
         // Check if we have binary data from previous node
@@ -97,7 +98,6 @@ class UploadVideo implements INodeType {
             }
             
             // Prepare multipart form data using FormData-like structure
-            const FormData = require('form-data');
             const formData = new FormData();
             formData.append('file', fileBuffer, {
               filename: fileName,
@@ -131,7 +131,6 @@ class UploadVideo implements INodeType {
 
         // If we have binary data, upload it
         if (binaryData && binaryData[binaryPropertyName]) {
-          const FormData = require('form-data');
           const formData = new FormData();
           
           formData.append('file', Buffer.from(binaryData[binaryPropertyName].data, 'base64'), {
