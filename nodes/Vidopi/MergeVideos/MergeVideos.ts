@@ -11,13 +11,68 @@ interface VidopiCredentials {
 }
 
 interface MergeVideosRequestBody {
-  video_url_1: string;
-  video_url_2: string;
-  output_format?: string;
-  merge_order?: string;
+  public_link_1: string;
+  public_link_2: string;
 }
 
-type MergeVideosResponse = IDataObject;
+interface MergeVideoTaskResponse extends IDataObject {
+  task_id?: string;
+  status?: string;
+}
+
+interface TaskStatusErrorResult {
+  error?: unknown;
+  [key: string]: unknown;
+}
+
+interface TaskStatusResponse {
+  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+  result?: TaskStatusErrorResult | null;
+  download_url?: string;
+  [key: string]: unknown;
+}
+
+async function pollTaskStatus(
+  executeFunctions: IExecuteFunctions,
+  taskId: string,
+  credentials: VidopiCredentials,
+  maxAttempts: number = 120,
+  delayMs: number = 5000,
+): Promise<TaskStatusResponse> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const statusResponse = (await executeFunctions.helpers.httpRequest({
+        method: 'GET',
+        url: `https://api.vidopi.com/task-status/${taskId}`,
+        headers: {
+          'X-API-Key': credentials.apiKey as string,
+        },
+        json: true,
+      })) as TaskStatusResponse;
+
+      if (statusResponse.status === 'SUCCESS') {
+        return statusResponse;
+      }
+
+      if (statusResponse.status === 'FAILED') {
+        throw new Error(
+          `Task failed: ${JSON.stringify(statusResponse.result?.error || statusResponse.result)}`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Task failed:')) {
+        throw error;
+      }
+      if (attempt === maxAttempts - 1) {
+        throw error;
+      }
+    }
+
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error('Task timed out after waiting for the merge to complete.');
+}
 
 class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
@@ -42,55 +97,22 @@ class MergeVideos implements INodeType {
     ],
     properties: [
       {
-        displayName: 'First Video URL',
+        displayName: 'First Video Public Link',
         name: 'videoUrl1',
         type: 'string',
         default: '',
         required: true,
-        description: 'Public link or URL of the first video',
-        placeholder: 'https://vidopi.com/public/video1.mp4',
+        description: 'Public link returned by the Upload Video node for the first video',
+        placeholder: 'https://api.vidopi.com/files/abc123.mp4',
       },
       {
-        displayName: 'Second Video URL',
+        displayName: 'Second Video Public Link',
         name: 'videoUrl2',
         type: 'string',
         default: '',
         required: true,
-        description: 'Public link or URL of the second video',
-        placeholder: 'https://vidopi.com/public/video2.mp4',
-      },
-      {
-        displayName: 'Additional Fields',
-        name: 'additionalFields',
-        type: 'collection',
-        placeholder: 'Add Field',
-        default: {},
-        options: [
-          {
-            displayName: 'Output Format',
-            name: 'outputFormat',
-            type: 'string',
-            default: 'mp4',
-            description: 'Output video format (mp4, avi, mov, etc.)',
-          },
-          {
-            displayName: 'Merge Order',
-            name: 'mergeOrder',
-            type: 'options',
-            options: [
-              {
-                name: 'First then Second',
-                value: 'sequential',
-              },
-              {
-                name: 'Side by Side',
-                value: 'side_by_side',
-              },
-            ],
-            default: 'sequential',
-            description: 'How to merge the videos',
-          },
-        ],
+        description: 'Public link returned by the Upload Video node for the second video',
+        placeholder: 'https://api.vidopi.com/files/def456.mp4',
       },
     ],
   };
@@ -104,23 +126,11 @@ class MergeVideos implements INodeType {
       try {
         const videoUrl1 = this.getNodeParameter('videoUrl1', i) as string;
         const videoUrl2 = this.getNodeParameter('videoUrl2', i) as string;
-        const additionalFields = this.getNodeParameter('additionalFields', i) as {
-          outputFormat?: string;
-          mergeOrder?: string;
-        };
 
         const body: MergeVideosRequestBody = {
-          video_url_1: videoUrl1,
-          video_url_2: videoUrl2,
+          public_link_1: videoUrl1,
+          public_link_2: videoUrl2,
         };
-
-        if (additionalFields.outputFormat) {
-          body.output_format = additionalFields.outputFormat;
-        }
-
-        if (additionalFields.mergeOrder) {
-          body.merge_order = additionalFields.mergeOrder;
-        }
 
         const response = (await this.helpers.httpRequest({
           method: 'POST',
@@ -130,8 +140,26 @@ class MergeVideos implements INodeType {
           },
           body,
           json: true,
-        })) as MergeVideosResponse;
-        returnData.push({ json: response });
+        })) as MergeVideoTaskResponse;
+
+        const taskId = response.task_id;
+
+        if (!taskId) {
+          returnData.push({ json: response });
+          continue;
+        }
+
+        const finalResult = await pollTaskStatus(this, taskId, credentials);
+
+        returnData.push({
+          json: {
+            ...response,
+            task_id: taskId,
+            status: finalResult.status,
+            result: finalResult.result,
+            download_url: finalResult.download_url,
+          },
+        });
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });
