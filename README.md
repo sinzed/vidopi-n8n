@@ -14,55 +14,20 @@ An n8n custom node package for interacting with the Vidopi video processing API.
 
 ### For n8n Users
 
-1. Install the package in your n8n instance:
-   ```bash
-   npm install n8n-nodes-vidopi
-   ```
-
-2. Restart your n8n instance to load the new nodes
-
-3. Configure your Vidopi API credentials:
+1. In n8n, click your profile icon, choose **Settings**, then open **Community Nodes**.
+2. Click **Install**, enter the npm package name `npm-package-name-placeholder`, and confirm the installation.
+3. Restart your n8n instance to load the new nodes.
+4. Configure your Vidopi API credentials:
    - Go to Credentials in n8n
    - Add a new "Vidopi API" credential
    - Enter your API key (get your API key from https://vidopi.com - free tier available)
    - The base URL is automatically set to https://api.vidopi.com
    - Save the credentials
-
-4. Use the nodes in your workflows:
+5. Use the nodes in your workflows:
    - Search for "Vidopi" in the node palette
    - Select the appropriate node (Upload Video, Cut Video, Merge Videos, Resize Video, or Task Status)
    - Configure the node parameters
    - Connect to your Vidopi API credentials
-
-## Development
-
-### Prerequisites
-
-- Node.js (version 18.17.0 or higher)
-- npm or yarn
-
-### Setup
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd vidopi-n8n
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Build the project:
-   ```bash
-   npm run build
-   ```
-
-4. Test locally:
-   ```bash
-   npm run dev
-   ```
 
 ## Available Nodes
 
