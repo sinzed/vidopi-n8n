@@ -97,7 +97,6 @@ Once installed, you can use the Vidopi nodes:
 - **Vidopi Cut Video** - Cut a segment from a video
 - **Vidopi Merge Videos** - Merge two videos together
 - **Vidopi Resize Video** - Resize video dimensions
-- **Vidopi Task Status** - Check the status of video processing tasks
 
 ## Troubleshooting
 

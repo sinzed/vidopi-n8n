@@ -8,7 +8,6 @@ An n8n custom node package for interacting with the Vidopi video processing API.
 - **Cut Video**: Cut a segment from a video by specifying start and end times
 - **Merge Videos**: Merge two videos together into a single video file
 - **Resize Video**: Resize video dimensions by specifying width and height
-- **Task Status**: Check the status and get results of asynchronous video processing tasks
 
 ## Installation
 
@@ -21,11 +20,10 @@ An n8n custom node package for interacting with the Vidopi video processing API.
    - Go to Credentials in n8n
    - Add a new "Vidopi API" credential
    - Enter your API key (get your API key from https://vidopi.com - free tier available)
-   - The base URL is automatically set to https://api.vidopi.com
    - Save the credentials
 5. Use the nodes in your workflows:
    - Search for "Vidopi" in the node palette
-   - Select the appropriate node (Upload Video, Cut Video, Merge Videos, Resize Video, or Task Status)
+   - Select the appropriate node (Upload Video, Cut Video, Merge Videos, or Resize Video)
    - Configure the node parameters
    - Connect to your Vidopi API credentials
 
@@ -36,7 +34,9 @@ An n8n custom node package for interacting with the Vidopi video processing API.
 Upload video files for processing. Get a public link to use in other operations.
 
 **Parameters:**
-- **Video File** (required): URL or file path of the video to upload
+- **Upload Source** (required): Choose between binary data from a previous node or a local file path
+- **Binary Property** (optional): Name of the binary property when using the binary upload source (defaults to `data`)
+- **File Path** (optional): Absolute or relative path on disk when using the local file upload source
 - **Public Link** (optional): Whether to generate a public link for the uploaded video
 
 **Endpoint:** `POST /upload-video/`
@@ -78,15 +78,6 @@ Resize video dimensions by specifying width and height in pixels.
 
 **Endpoint:** `POST /resize-video/`
 
-### Task Status
-
-Check the status and get results of asynchronous video processing tasks.
-
-**Parameters:**
-- **Task ID** (required): The task ID returned from a video processing operation
-
-**Endpoint:** `GET /task-status/{task_id}`
-
 ## API Configuration
 
 All nodes require Vidopi API credentials:
@@ -101,7 +92,7 @@ All nodes require Vidopi API credentials:
 1. Use the **Upload Video** node to upload your video file
 2. Extract the public link from the response
 3. Use the **Cut Video** node with the public link, start time, and end time
-4. Use the **Task Status** node to check the processing status
+4. Wait for the node to finish (it now polls automatically and returns the download link)
 
 ### Example 2: Merge Two Videos
 
@@ -115,7 +106,7 @@ All nodes require Vidopi API credentials:
 1. Upload a video using the **Upload Video** node
 2. Extract the public link from the response
 3. Use the **Resize Video** node with the video URL and desired dimensions
-4. Check the task status to get the resized video
+4. Wait for the node to finish (it returns the processed video link when done)
 
 ## License
 

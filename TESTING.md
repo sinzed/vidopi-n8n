@@ -35,12 +35,11 @@
 6. **Use the nodes:**
    - Create a new workflow
    - Search for "Vidopi" in the node palette
-   - You should see all 5 Vidopi nodes:
+   - You should see all Vidopi nodes:
      - Vidopi Upload Video
      - Vidopi Cut Video
      - Vidopi Merge Videos
      - Vidopi Resize Video
-     - Vidopi Task Status
 
 7. **Test the nodes:**
    - Add a Vidopi node to your workflow

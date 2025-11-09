@@ -1,6 +1,5 @@
 import {
   IExecuteFunctions,
-  IHttpRequestOptions,
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
@@ -9,7 +8,7 @@ import FormData = require('form-data');
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
-type UploadSource = 'binary' | 'localFile' | 'remoteUrl';
+type UploadSource = 'binary' | 'localFile';
 
 const DEFAULT_CONTENT_TYPE = 'video/mp4';
 
@@ -86,11 +85,6 @@ class UploadVideo implements INodeType {
             value: 'localFile',
             description: 'Load a video from the file system accessible to the n8n server',
           },
-          {
-            name: 'Remote URL',
-            value: 'remoteUrl',
-            description: 'Download a video from a publicly accessible URL before uploading',
-          },
         ],
       },
       {
@@ -122,20 +116,6 @@ class UploadVideo implements INodeType {
         },
       },
       {
-        displayName: 'Video File URL',
-        name: 'videoFile',
-        type: 'string',
-        default: '',
-        required: false,
-        description: 'URL of the video to upload.',
-        placeholder: 'https://example.com/video.mp4',
-        displayOptions: {
-          show: {
-            uploadSource: ['remoteUrl'],
-          },
-        },
-      },
-      {
         displayName: 'Additional Fields',
         name: 'additionalFields',
         type: 'collection',
@@ -162,7 +142,6 @@ class UploadVideo implements INodeType {
     for (let i = 0; i < items.length; i++) {
       try {
         const uploadSourceParam = this.getNodeParameter('uploadSource', i, '') as string;
-        const videoFile = this.getNodeParameter('videoFile', i, '') as string;
         const localFilePath = this.getNodeParameter('localFilePath', i, '') as string;
         const binaryPropertyName = (this.getNodeParameter('binaryPropertyName', i, '') as string) || 'data';
         const additionalFields = this.getNodeParameter('additionalFields', i) as {
@@ -174,8 +153,7 @@ class UploadVideo implements INodeType {
         let contentType = DEFAULT_CONTENT_TYPE;
 
         const inferredUploadSource: UploadSource =
-          (uploadSourceParam as UploadSource) ||
-          (videoFile ? 'remoteUrl' : 'binary');
+          (uploadSourceParam as UploadSource) || 'binary';
 
         if (inferredUploadSource === 'binary') {
           const binaryData = items[i].binary;
@@ -202,38 +180,6 @@ class UploadVideo implements INodeType {
             throw new Error(
               `Binary data not found. Ensure the previous node outputs binary data under the property name "${binaryPropertyName}".`,
             );
-          }
-        } else if (inferredUploadSource === 'remoteUrl') {
-          if (!videoFile) {
-            throw new Error('Please provide a value for "Video File URL" when using the Remote URL upload source.');
-          }
-
-          try {
-            const downloadResponse = await this.helpers.httpRequest({
-              method: 'GET',
-              url: videoFile,
-              json: false,
-              encoding: null,
-            } as unknown as IHttpRequestOptions);
-
-            fileName =
-              videoFile.split('/').pop() || videoFile.split('\\').pop() || fileName;
-            contentType = guessContentType(fileName);
-
-            if (Buffer.isBuffer(downloadResponse)) {
-              fileBuffer = downloadResponse;
-            } else if (downloadResponse instanceof ArrayBuffer) {
-              fileBuffer = Buffer.from(downloadResponse);
-            } else if (typeof downloadResponse === 'string') {
-              fileBuffer = Buffer.from(downloadResponse, 'binary');
-            } else {
-              fileBuffer = Buffer.from(JSON.stringify(downloadResponse));
-              contentType = 'application/json';
-            }
-          } catch (error) {
-            throw new Error(`Failed to download video from URL: ${
-              error instanceof Error ? error.message : String(error)
-            }`);
           }
         } else if (inferredUploadSource === 'localFile') {
           if (!localFilePath) {
