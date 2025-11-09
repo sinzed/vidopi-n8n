@@ -23,7 +23,7 @@ class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Resize Video',
     name: 'vidopiResizeVideo',
-    icon: 'file:logo.png',
+    icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
     subtitle: 'Resize video dimensions',

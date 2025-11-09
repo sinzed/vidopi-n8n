@@ -10,7 +10,7 @@ class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Upload Video',
     name: 'vidopiUploadVideo',
-    icon: 'file:logo.png',
+    icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
     subtitle: 'Upload video files',
