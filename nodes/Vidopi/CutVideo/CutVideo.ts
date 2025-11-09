@@ -82,6 +82,7 @@ class CutVideo implements INodeType {
     icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
+    documentationUrl: 'https://dashboard.vidopi.com/api-docs',
     subtitle: 'Cut a segment from a video',
     description: 'Cut a segment from a video by specifying start and end times',
     defaults: {

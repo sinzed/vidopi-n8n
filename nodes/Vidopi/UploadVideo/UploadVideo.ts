@@ -6,6 +6,46 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import FormData from 'form-data';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+
+type UploadSource = 'binary' | 'localFile' | 'remoteUrl';
+
+const DEFAULT_CONTENT_TYPE = 'video/mp4';
+
+const guessContentType = (fileName: string): string => {
+  const extension = path.extname(fileName).toLowerCase();
+
+  switch (extension) {
+    case '.mov':
+      return 'video/quicktime';
+    case '.mkv':
+      return 'video/x-matroska';
+    case '.webm':
+      return 'video/webm';
+    case '.avi':
+      return 'video/x-msvideo';
+    case '.flv':
+      return 'video/x-flv';
+    case '.wmv':
+      return 'video/x-ms-wmv';
+    case '.m4v':
+      return 'video/x-m4v';
+    case '.mpg':
+    case '.mpeg':
+      return 'video/mpeg';
+    case '.ogv':
+      return 'video/ogg';
+    case '.ts':
+      return 'video/mp2t';
+    case '.3gp':
+      return 'video/3gpp';
+    case '.3g2':
+      return 'video/3gpp2';
+    default:
+      return DEFAULT_CONTENT_TYPE;
+  }
+};
 
 class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
@@ -14,8 +54,9 @@ class UploadVideo implements INodeType {
     icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
+    documentationUrl: 'https://dashboard.vidopi.com/api-docs',
     subtitle: 'Upload video files',
-    description: 'Upload video files for processing. Supports binary files from previous nodes or URLs.',
+    description: 'Upload video files for processing. Supports binary data, local file paths, or remote URLs.',
     defaults: {
       name: 'Vidopi Upload Video',
     },
@@ -29,13 +70,56 @@ class UploadVideo implements INodeType {
     ],
     properties: [
       {
+        displayName: 'Upload Source',
+        name: 'uploadSource',
+        type: 'options',
+        default: 'binary',
+        description: 'Where the video file should be loaded from',
+        options: [
+          {
+            name: 'Binary Data',
+            value: 'binary',
+            description: 'Use binary data produced by a previous node',
+          },
+          {
+            name: 'Local File Path',
+            value: 'localFile',
+            description: 'Load a video from the file system accessible to the n8n server',
+          },
+          {
+            name: 'Remote URL',
+            value: 'remoteUrl',
+            description: 'Download a video from a publicly accessible URL before uploading',
+          },
+        ],
+      },
+      {
         displayName: 'Binary Property',
         name: 'binaryPropertyName',
         type: 'string',
         default: 'data',
         required: false,
-        description: 'Name of the binary property that contains the file to upload. Leave empty if providing a URL.',
+        description: 'Name of the binary property that contains the file to upload.',
         placeholder: 'data',
+        displayOptions: {
+          show: {
+            uploadSource: ['binary'],
+          },
+        },
+      },
+      {
+        displayName: 'File Path',
+        name: 'localFilePath',
+        type: 'string',
+        default: '',
+        required: false,
+        description: 'Absolute or relative path to the video file on disk.',
+        placeholder: '/data/videos/video.mp4',
+        displayOptions: {
+          show: {
+            uploadSource: ['localFile'],
+          },
+        },
       },
       {
         displayName: 'Video File URL',
@@ -43,8 +127,13 @@ class UploadVideo implements INodeType {
         type: 'string',
         default: '',
         required: false,
-        description: 'URL of the video to upload. Leave empty if using binary data from previous node.',
+        description: 'URL of the video to upload.',
         placeholder: 'https://example.com/video.mp4',
+        displayOptions: {
+          show: {
+            uploadSource: ['remoteUrl'],
+          },
+        },
       },
       {
         displayName: 'Additional Fields',
@@ -72,40 +161,53 @@ class UploadVideo implements INodeType {
 
     for (let i = 0; i < items.length; i++) {
       try {
-        const videoFile = this.getNodeParameter('videoFile', i) as string;
-        const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string || 'data';
+        const uploadSourceParam = this.getNodeParameter('uploadSource', i, '') as string;
+        const videoFile = this.getNodeParameter('videoFile', i, '') as string;
+        const localFilePath = this.getNodeParameter('localFilePath', i, '') as string;
+        const binaryPropertyName = (this.getNodeParameter('binaryPropertyName', i, '') as string) || 'data';
         const additionalFields = this.getNodeParameter('additionalFields', i) as {
           publicLink?: boolean;
         };
 
         let fileName = 'video.mp4';
-        let fileBuffer: Buffer;
-        let contentType = 'video/mp4';
-        
-        // Check if we have binary data from previous node
-        const binaryData = items[i].binary;
-        
-        if (binaryData && binaryData[binaryPropertyName]) {
-          // Use binary data from previous node
-          const binaryItem = binaryData[binaryPropertyName];
-          fileName = binaryItem.fileName || fileName;
-          contentType = binaryItem.mimeType || contentType;
-          
-          // Get binary data buffer using n8n helper if available, otherwise decode base64
-          try {
-            // Try to use n8n's helper method for getting binary data
-            if (this.helpers.getBinaryDataBuffer) {
-              fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-            } else {
-              // Fallback to manual base64 decoding
+        let fileBuffer: Buffer | undefined;
+        let contentType = DEFAULT_CONTENT_TYPE;
+
+        const inferredUploadSource: UploadSource =
+          (uploadSourceParam as UploadSource) ||
+          (videoFile ? 'remoteUrl' : 'binary');
+
+        if (inferredUploadSource === 'binary') {
+          const binaryData = items[i].binary;
+
+          if (!binaryPropertyName) {
+            throw new Error('Please specify the Binary Property that contains the file to upload.');
+          }
+
+          if (binaryData && binaryData[binaryPropertyName]) {
+            const binaryItem = binaryData[binaryPropertyName];
+            fileName = binaryItem.fileName || fileName;
+            contentType = binaryItem.mimeType || contentType;
+
+            try {
+              if (this.helpers.getBinaryDataBuffer) {
+                fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
+              } else {
+                fileBuffer = Buffer.from(binaryItem.data, 'base64');
+              }
+            } catch (_error) {
               fileBuffer = Buffer.from(binaryItem.data, 'base64');
             }
-          } catch (_error) {
-            // Fallback to manual base64 decoding if helper fails
-            fileBuffer = Buffer.from(binaryItem.data, 'base64');
+          } else {
+            throw new Error(
+              `Binary data not found. Ensure the previous node outputs binary data under the property name "${binaryPropertyName}".`,
+            );
           }
-        } else if (videoFile) {
-          // Download file from URL first, then upload
+        } else if (inferredUploadSource === 'remoteUrl') {
+          if (!videoFile) {
+            throw new Error('Please provide a value for "Video File URL" when using the Remote URL upload source.');
+          }
+
           try {
             const downloadResponse = await this.helpers.httpRequest({
               method: 'GET',
@@ -113,11 +215,11 @@ class UploadVideo implements INodeType {
               json: false,
               encoding: null,
             } as unknown as IHttpRequestOptions);
-            
-            // Extract filename from URL
-            fileName = videoFile.split('/').pop() || videoFile.split('\\').pop() || 'video.mp4';
-            
-            // Convert response to buffer for upload
+
+            fileName =
+              videoFile.split('/').pop() || videoFile.split('\\').pop() || fileName;
+            contentType = guessContentType(fileName);
+
             if (Buffer.isBuffer(downloadResponse)) {
               fileBuffer = downloadResponse;
             } else if (downloadResponse instanceof ArrayBuffer) {
@@ -126,12 +228,36 @@ class UploadVideo implements INodeType {
               fileBuffer = Buffer.from(downloadResponse, 'binary');
             } else {
               fileBuffer = Buffer.from(JSON.stringify(downloadResponse));
+              contentType = 'application/json';
             }
           } catch (error) {
-            throw new Error(`Failed to download video from URL: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to download video from URL: ${
+              error instanceof Error ? error.message : String(error)
+            }`);
           }
+        } else if (inferredUploadSource === 'localFile') {
+          if (!localFilePath) {
+            throw new Error('Please provide a value for "File Path" when using the Local File Path upload source.');
+          }
+
+          const resolvedPath = path.resolve(localFilePath);
+
+          try {
+            fileBuffer = await fs.readFile(resolvedPath);
+          } catch (error) {
+            throw new Error(`Failed to read file at path "${resolvedPath}": ${
+              error instanceof Error ? error.message : String(error)
+            }`);
+          }
+
+          fileName = path.basename(resolvedPath);
+          contentType = guessContentType(fileName);
         } else {
-          throw new Error('No video file provided. Please provide a file URL in "Video File URL" field or connect a node that outputs binary data and specify the "Binary Property" name.');
+          throw new Error(`Unsupported upload source "${uploadSourceParam as string}".`);
+        }
+
+        if (!fileBuffer) {
+          throw new Error('Unable to determine video file content for upload.');
         }
 
         // Upload the file
@@ -172,4 +298,5 @@ class UploadVideo implements INodeType {
 
 // Export for CommonJS
 exports.UploadVideo = UploadVideo;
+
 

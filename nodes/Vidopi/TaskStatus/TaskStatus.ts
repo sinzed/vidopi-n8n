@@ -12,6 +12,7 @@ class TaskStatus implements INodeType {
     icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
+    documentationUrl: 'https://dashboard.vidopi.com/api-docs',
     subtitle: 'Check task status and results',
     description: 'Check the status and get results of asynchronous video processing tasks',
     defaults: {

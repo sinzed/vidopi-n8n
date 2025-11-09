@@ -26,6 +26,7 @@ class MergeVideos implements INodeType {
     icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
+    documentationUrl: 'https://dashboard.vidopi.com/api-docs',
     subtitle: 'Merge two videos together',
     description: 'Merge two videos together into a single video file',
     defaults: {

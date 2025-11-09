@@ -27,6 +27,7 @@ class ResizeVideo implements INodeType {
     icon: 'file:../../../logo.png',
     group: ['transform'],
     version: 1,
+    documentationUrl: 'https://dashboard.vidopi.com/api-docs',
     subtitle: 'Resize video dimensions',
     description: 'Resize video dimensions by specifying width and height in pixels',
     defaults: {
