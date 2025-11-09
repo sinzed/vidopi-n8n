@@ -5,7 +5,7 @@ import {
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import FormData from 'form-data';
+import FormData = require('form-data');
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
