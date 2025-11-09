@@ -11,14 +11,71 @@ interface VidopiCredentials {
 }
 
 interface ResizeVideoRequestBody {
-  video_url: string;
-  width: number;
-  height: number;
+  public_link: string;
+  width?: number;
+  height?: number;
   maintain_aspect_ratio?: boolean;
   output_format?: string;
 }
 
-type ResizeVideoResponse = IDataObject;
+interface ResizeVideoTaskResponse extends IDataObject {
+  task_id?: string;
+  status?: string;
+}
+
+interface TaskStatusErrorResult {
+  error?: unknown;
+  [key: string]: unknown;
+}
+
+interface TaskStatusResponse {
+  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+  result?: TaskStatusErrorResult | null;
+  download_url?: string;
+  [key: string]: unknown;
+}
+
+async function pollTaskStatus(
+  executeFunctions: IExecuteFunctions,
+  taskId: string,
+  credentials: VidopiCredentials,
+  maxAttempts: number = 120,
+  delayMs: number = 5000,
+): Promise<TaskStatusResponse> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const statusResponse = (await executeFunctions.helpers.httpRequest({
+        method: 'GET',
+        url: `https://api.vidopi.com/task-status/${taskId}`,
+        headers: {
+          'X-API-Key': credentials.apiKey as string,
+        },
+        json: true,
+      })) as TaskStatusResponse;
+
+      if (statusResponse.status === 'SUCCESS') {
+        return statusResponse;
+      }
+
+      if (statusResponse.status === 'FAILED') {
+        throw new Error(
+          `Task failed: ${JSON.stringify(statusResponse.result?.error || statusResponse.result)}`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Task failed:')) {
+        throw error;
+      }
+      if (attempt === maxAttempts - 1) {
+        throw error;
+      }
+    }
+
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error('Task timed out after waiting for the resize to complete.');
+}
 
 class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {
@@ -109,10 +166,16 @@ class ResizeVideo implements INodeType {
         };
 
         const body: ResizeVideoRequestBody = {
-          video_url: videoUrl,
-          width,
-          height,
+          public_link: videoUrl,
         };
+
+        if (width) {
+          body.width = width;
+        }
+
+        if (height) {
+          body.height = height;
+        }
 
         if (additionalFields.maintainAspectRatio !== undefined) {
           body.maintain_aspect_ratio = additionalFields.maintainAspectRatio;
@@ -130,8 +193,26 @@ class ResizeVideo implements INodeType {
           },
           body,
           json: true,
-        })) as ResizeVideoResponse;
-        returnData.push({ json: response });
+        })) as ResizeVideoTaskResponse;
+
+        const taskId = response.task_id;
+
+        if (!taskId) {
+          returnData.push({ json: response });
+          continue;
+        }
+
+        const finalResult = await pollTaskStatus(this, taskId, credentials);
+
+        returnData.push({
+          json: {
+            ...response,
+            task_id: taskId,
+            status: finalResult.status,
+            result: finalResult.result,
+            download_url: finalResult.download_url,
+          },
+        });
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });
