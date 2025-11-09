@@ -1,16 +1,18 @@
-import tseslint from 'typescript-eslint';
 import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', '*.js'],
+    ignores: ['dist/**', 'node_modules/**'],
   },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ['**/*.ts'],
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
-      ecmaVersion: 2019,
-      sourceType: 'module',
+      parserOptions: {
+        project: './tsconfig.json',
+      },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -20,9 +22,10 @@ export default tseslint.config(
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
     },
-  }
+  },
 );
 

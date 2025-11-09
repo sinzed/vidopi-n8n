@@ -5,6 +5,20 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
+interface VidopiCredentials {
+  apiKey: string;
+}
+
+interface ResizeVideoRequestBody {
+  video_url: string;
+  width: number;
+  height: number;
+  maintain_aspect_ratio?: boolean;
+  output_format?: string;
+}
+
+type ResizeVideoResponse = Record<string, unknown>;
+
 class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Resize Video',
@@ -80,7 +94,7 @@ class ResizeVideo implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
-    const credentials = await this.getCredentials('vidopiApi');
+    const credentials = (await this.getCredentials('vidopiApi')) as VidopiCredentials;
 
     for (let i = 0; i < items.length; i++) {
       try {
@@ -92,7 +106,7 @@ class ResizeVideo implements INodeType {
           outputFormat?: string;
         };
 
-        const body: any = {
+        const body: ResizeVideoRequestBody = {
           video_url: videoUrl,
           width,
           height,
@@ -106,7 +120,7 @@ class ResizeVideo implements INodeType {
           body.output_format = additionalFields.outputFormat;
         }
 
-        const response = await this.helpers.httpRequest({
+        const response = (await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/resize-video/',
           headers: {
@@ -114,7 +128,7 @@ class ResizeVideo implements INodeType {
           },
           body,
           json: true,
-        });
+        })) as ResizeVideoResponse;
         returnData.push({ json: response });
       } catch (error) {
         if (this.continueOnFail()) {

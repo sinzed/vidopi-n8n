@@ -10,7 +10,9 @@
   ],
   "scripts": {
     "build": "tsc && find dist -name '*.js' -type f -exec sed -i '' '/Object.defineProperty(exports, \"__esModule\"/d' {} \\; && cp logo.png dist/nodes/Vidopi/UploadVideo/ && cp logo.png dist/nodes/Vidopi/CutVideo/ && cp logo.png dist/nodes/Vidopi/MergeVideos/ && cp logo.png dist/nodes/Vidopi/ResizeVideo/ && cp logo.png dist/nodes/Vidopi/TaskStatus/",
-    "dev": "n8n"
+    "dev": "n8n",
+    "lint": "eslint \"nodes/**/*.ts\" \"credentials/**/*.ts\""
+
   },
   "keywords": [
     "n8n",
@@ -41,6 +43,7 @@
     "n8n-workflow": "^1.0.0"
   },
   "devDependencies": {
+    "eslint": "^9.14.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",

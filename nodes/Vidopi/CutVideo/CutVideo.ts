@@ -5,22 +5,50 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
+interface VidopiCredentials {
+  apiKey: string;
+}
+
+interface CutVideoRequestBody {
+  public_link: string;
+  start_time: number;
+  end_time: number;
+  output_format?: string;
+}
+
+interface TaskStatusErrorResult {
+  error?: unknown;
+  [key: string]: unknown;
+}
+
+interface TaskStatusResponse {
+  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+  result?: TaskStatusErrorResult | null;
+  download_url?: string;
+  [key: string]: unknown;
+}
+
+interface CutVideoResponse {
+  task_id?: string;
+  [key: string]: unknown;
+}
+
 async function pollTaskStatus(
   executeFunctions: IExecuteFunctions,
   taskId: string,
-  credentials: any,
+  credentials: VidopiCredentials,
   maxAttempts: number = 120 // 10 minutes max (120 * 5 seconds)
-): Promise<any> {
+): Promise<TaskStatusResponse> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const statusResponse = await executeFunctions.helpers.httpRequest({
+      const statusResponse = (await executeFunctions.helpers.httpRequest({
         method: 'GET',
         url: `https://api.vidopi.com/task-status/${taskId}`,
         headers: {
           'X-API-Key': credentials.apiKey as string,
         },
         json: true,
-      });
+      })) as TaskStatusResponse;
 
       // Check if task is complete
       if (statusResponse.status === 'SUCCESS') {
@@ -115,7 +143,7 @@ class CutVideo implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
-    const credentials = await this.getCredentials('vidopiApi');
+    const credentials = (await this.getCredentials('vidopiApi')) as VidopiCredentials;
 
     for (let i = 0; i < items.length; i++) {
       try {
@@ -126,7 +154,7 @@ class CutVideo implements INodeType {
           outputFormat?: string;
         };
 
-        const body: any = {
+        const body: CutVideoRequestBody = {
           public_link: publicLink,
           start_time: startTime,
           end_time: endTime,
@@ -137,7 +165,7 @@ class CutVideo implements INodeType {
         }
 
         // Start the cut video task
-        const response = await this.helpers.httpRequest({
+        const response = (await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/cut-video/',
           headers: {
@@ -145,7 +173,7 @@ class CutVideo implements INodeType {
           },
           body,
           json: true,
-        });
+        })) as CutVideoResponse;
 
         // Extract task ID from response
         const taskId = response.task_id;

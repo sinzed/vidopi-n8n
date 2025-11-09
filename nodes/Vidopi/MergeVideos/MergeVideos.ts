@@ -5,6 +5,19 @@ import {
   INodeTypeDescription,
 } from 'n8n-workflow';
 
+interface VidopiCredentials {
+  apiKey: string;
+}
+
+interface MergeVideosRequestBody {
+  video_url_1: string;
+  video_url_2: string;
+  output_format?: string;
+  merge_order?: string;
+}
+
+type MergeVideosResponse = Record<string, unknown>;
+
 class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Merge Videos',
@@ -83,7 +96,7 @@ class MergeVideos implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
-    const credentials = await this.getCredentials('vidopiApi');
+    const credentials = (await this.getCredentials('vidopiApi')) as VidopiCredentials;
 
     for (let i = 0; i < items.length; i++) {
       try {
@@ -94,7 +107,7 @@ class MergeVideos implements INodeType {
           mergeOrder?: string;
         };
 
-        const body: any = {
+        const body: MergeVideosRequestBody = {
           video_url_1: videoUrl1,
           video_url_2: videoUrl2,
         };
@@ -107,7 +120,7 @@ class MergeVideos implements INodeType {
           body.merge_order = additionalFields.mergeOrder;
         }
 
-        const response = await this.helpers.httpRequest({
+        const response = (await this.helpers.httpRequest({
           method: 'POST',
           url: 'https://api.vidopi.com/merge-video/',
           headers: {
@@ -115,7 +128,7 @@ class MergeVideos implements INodeType {
           },
           body,
           json: true,
-        });
+        })) as MergeVideosResponse;
         returnData.push({ json: response });
       } catch (error) {
         if (this.continueOnFail()) {
