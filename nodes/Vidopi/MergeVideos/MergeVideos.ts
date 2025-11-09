@@ -1,4 +1,5 @@
 import {
+  IDataObject,
   IExecuteFunctions,
   INodeExecutionData,
   INodeType,
@@ -16,7 +17,7 @@ interface MergeVideosRequestBody {
   merge_order?: string;
 }
 
-type MergeVideosResponse = Record<string, unknown>;
+type MergeVideosResponse = IDataObject;
 
 class MergeVideos implements INodeType {
   description: INodeTypeDescription = {

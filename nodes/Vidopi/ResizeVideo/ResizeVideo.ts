@@ -1,4 +1,5 @@
 import {
+  IDataObject,
   IExecuteFunctions,
   INodeExecutionData,
   INodeType,
@@ -17,7 +18,7 @@ interface ResizeVideoRequestBody {
   output_format?: string;
 }
 
-type ResizeVideoResponse = Record<string, unknown>;
+type ResizeVideoResponse = IDataObject;
 
 class ResizeVideo implements INodeType {
   description: INodeTypeDescription = {

@@ -1,5 +1,6 @@
 import {
   IExecuteFunctions,
+  IHttpRequestOptions,
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
@@ -109,8 +110,9 @@ class UploadVideo implements INodeType {
             const downloadResponse = await this.helpers.httpRequest({
               method: 'GET',
               url: videoFile,
-              responseType: 'arraybuffer',
-            });
+              json: false,
+              encoding: null,
+            } as unknown as IHttpRequestOptions);
             
             // Extract filename from URL
             fileName = videoFile.split('/').pop() || videoFile.split('\\').pop() || 'video.mp4';
