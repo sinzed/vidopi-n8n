@@ -117,25 +117,6 @@ All nodes require Vidopi API credentials:
 3. Use the **Resize Video** node with the video URL and desired dimensions
 4. Check the task status to get the resized video
 
-## Publishing to npm
-
-To publish this package to npm:
-
-1. Ensure you're logged in to npm:
-   ```bash
-   npm login
-   ```
-
-2. Build the project:
-   ```bash
-   npm run build
-   ```
-
-3. Publish the package:
-   ```bash
-   npm publish
-   ```
-
 ## License
 
 MIT
