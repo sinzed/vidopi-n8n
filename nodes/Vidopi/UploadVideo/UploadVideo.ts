@@ -3,6 +3,7 @@ import {
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
+  NodeConnectionType,
 } from 'n8n-workflow';
 import FormData = require('form-data');
 import { promises as fs } from 'fs';
@@ -59,8 +60,8 @@ class UploadVideo implements INodeType {
     defaults: {
       name: 'Vidopi Upload Video',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     credentials: [
       {
         name: 'vidopiApi',

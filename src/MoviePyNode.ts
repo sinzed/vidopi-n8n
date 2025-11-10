@@ -3,6 +3,7 @@ import {
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
+  NodeConnectionType,
 } from 'n8n-workflow';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
@@ -19,8 +20,8 @@ export class MoviePyNode implements INodeType {
     defaults: {
       name: 'MoviePy',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     properties: [
       {
         displayName: 'Input File Path',

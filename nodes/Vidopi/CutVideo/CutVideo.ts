@@ -3,6 +3,7 @@ import {
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
+  NodeConnectionType,
 } from 'n8n-workflow';
 
 interface VidopiCredentials {
@@ -32,7 +33,6 @@ interface CutVideoResponse {
   task_id?: string;
   [key: string]: unknown;
 }
-
 async function pollTaskStatus(
   executeFunctions: IExecuteFunctions,
   taskId: string,
@@ -58,7 +58,7 @@ async function pollTaskStatus(
       }
 
       // Wait 5 seconds before next poll
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
     } catch (error) {
       // If it's a task failure error, throw it
       if (error instanceof Error && error.message.includes('Task failed')) {
@@ -68,7 +68,7 @@ async function pollTaskStatus(
       if (attempt === maxAttempts - 1) {
         throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
     }
   }
 
@@ -88,8 +88,8 @@ class CutVideo implements INodeType {
     defaults: {
       name: 'Vidopi Cut Video',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     credentials: [
       {
         name: 'vidopiApi',

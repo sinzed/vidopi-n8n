@@ -4,6 +4,7 @@ import {
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
+  NodeConnectionType,
 } from 'n8n-workflow';
 
 interface VidopiCredentials {
@@ -67,8 +68,7 @@ async function pollTaskStatus(
         throw error;
       }
     }
-
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
   }
 
   throw new Error('Task timed out after waiting for the merge to complete.');
@@ -87,8 +87,8 @@ class MergeVideos implements INodeType {
     defaults: {
       name: 'Vidopi Merge Videos',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     credentials: [
       {
         name: 'vidopiApi',
