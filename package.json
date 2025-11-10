@@ -27,11 +27,11 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "./dist/nodes/Vidopi/UploadVideo/UploadVideo.js",
-      "./dist/nodes/Vidopi/CutVideo/CutVideo.js",
-      "./dist/nodes/Vidopi/MergeVideos/MergeVideos.js",
-      "./dist/nodes/Vidopi/ResizeVideo/ResizeVideo.js",
-      "./dist/nodes/Vidopi/TaskStatus/TaskStatus.js"
+      "./dist/nodes/Vidopi/UploadVideo/UploadVideo.node.js",
+      "./dist/nodes/Vidopi/CutVideo/CutVideo.node.js",
+      "./dist/nodes/Vidopi/MergeVideos/MergeVideos.node.js",
+      "./dist/nodes/Vidopi/ResizeVideo/ResizeVideo.node.js",
+      "./dist/nodes/Vidopi/TaskStatus/TaskStatus.node.js"
     ],
     "credentials": [
       "./dist/credentials/VidopiApi.credentials.js"
