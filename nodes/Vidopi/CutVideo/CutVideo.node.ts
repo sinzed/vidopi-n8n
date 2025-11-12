@@ -1,4 +1,5 @@
 import {
+  IDataObject,
   IExecuteFunctions,
   INodeExecutionData,
   INodeType,
@@ -17,63 +18,10 @@ interface CutVideoRequestBody {
   output_format?: string;
 }
 
-interface TaskStatusErrorResult {
-  error?: unknown;
-  [key: string]: unknown;
-}
-
-interface TaskStatusResponse {
-  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
-  result?: TaskStatusErrorResult | null;
-  download_url?: string;
-  [key: string]: unknown;
-}
-
-interface CutVideoResponse {
+interface CutVideoResponse extends IDataObject {
   task_id?: string;
-  [key: string]: unknown;
 }
-async function pollTaskStatus(
-  executeFunctions: IExecuteFunctions,
-  taskId: string,
-  credentials: VidopiCredentials,
-  maxAttempts: number = 120 // 10 minutes max (120 * 5 seconds)
-): Promise<TaskStatusResponse> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const statusResponse = (await executeFunctions.helpers.httpRequest({
-        method: 'GET',
-        url: `https://api.vidopi.com/task-status/${taskId}`,
-        headers: {
-          'X-API-Key': credentials.apiKey as string,
-        },
-        json: true,
-      })) as TaskStatusResponse;
 
-      // Check if task is complete
-      if (statusResponse.status === 'SUCCESS') {
-        return statusResponse;
-      } else if (statusResponse.status === 'FAILED') {
-        throw new Error(`Task failed: ${JSON.stringify(statusResponse.result?.error || statusResponse.result)}`);
-      }
-
-      // Wait 5 seconds before next poll
-      await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
-    } catch (error) {
-      // If it's a task failure error, throw it
-      if (error instanceof Error && error.message.includes('Task failed')) {
-        throw error;
-      }
-      // Otherwise, continue polling (might be temporary network issue)
-      if (attempt === maxAttempts - 1) {
-        throw error;
-      }
-      await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
-    }
-  }
-
-  throw new Error('Task timed out after 10 minutes');
-}
 
 class CutVideo implements INodeType {
   description: INodeTypeDescription = {
@@ -183,17 +131,9 @@ class CutVideo implements INodeType {
         }
 
         // Poll for task completion
-        const finalResult = await pollTaskStatus(this, taskId, credentials);
 
         // Return the final result
-        returnData.push({ 
-          json: {
-            task_id: taskId,
-            status: finalResult.status,
-            result: finalResult.result,
-            download_url: finalResult.download_url,
-          }
-        });
+        returnData.push({ json: response });
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });
