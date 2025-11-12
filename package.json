@@ -31,7 +31,8 @@
       "./dist/nodes/Vidopi/CutVideo/CutVideo.node.js",
       "./dist/nodes/Vidopi/MergeVideos/MergeVideos.node.js",
       "./dist/nodes/Vidopi/ResizeVideo/ResizeVideo.node.js",
-      "./dist/nodes/Vidopi/TaskStatus/TaskStatus.node.js"
+      "./dist/nodes/Vidopi/TaskStatus/TaskStatus.node.js",
+      "./dist/nodes/Vidopi/Wait/Wait.node.js"
     ],
     "credentials": [
       "./dist/credentials/VidopiApi.credentials.js"
