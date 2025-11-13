@@ -12,7 +12,7 @@ export class CutVideo implements INodeType {
 		name: 'cutVideo',
 		group: ['transform'],
 		version: 1,
-		description: 'Send video cut request to Vidopi and generate dynamic webhook path',
+		description: 'Send video cut request to Vidopi. Can use n8n Wait node resume URL or generate dynamic webhook path',
 		defaults: { name: 'Cut Video' },
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
@@ -44,6 +44,14 @@ export class CutVideo implements INodeType {
 				default: 5,
 				required: true,
 			},
+			{
+				displayName: 'Resume URL (from Wait node)',
+				name: 'resume_url',
+				type: 'string',
+				default: '',
+				description: 'Optional: Use {{$execution.resumeUrl}} from n8n\'s built-in Wait node. If provided, Vidopi will call this URL when the video cut is complete, resuming the Wait node. If not provided, a dynamic webhook path will be generated instead.',
+				required: false,
+			},
 		],
 	};
 
@@ -56,13 +64,23 @@ export class CutVideo implements INodeType {
 			const public_link = this.getNodeParameter('public_link', i) as string;
 			const start_time = this.getNodeParameter('start_time', i) as number;
 			const end_time = this.getNodeParameter('end_time', i) as number;
+			const resume_url = this.getNodeParameter('resume_url', i, '') as string;
 
-			// Generate a unique dynamic webhook path
-			const dynamicPath = `vidopi-wait-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+			let webhookUrl: string;
+			let dynamicPath: string | undefined;
 
-			// Build full URL for this webhook
-			const baseUrl = this.getRestApiUrl().replace('/rest', '');
-			const webhookUrl = `${baseUrl}/webhook/${dynamicPath}`;
+			// If resume URL is provided (from Wait node), use it
+			// Otherwise, generate a dynamic webhook path (legacy behavior)
+			if (resume_url && resume_url.trim() !== '') {
+				webhookUrl = resume_url.trim();
+			} else {
+				// Generate a unique dynamic webhook path
+				dynamicPath = `vidopi-wait-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+				// Build full URL for this webhook
+				const baseUrl = this.getRestApiUrl().replace('/rest', '');
+				webhookUrl = `${baseUrl}/webhook/${dynamicPath}`;
+			}
 
 			// Call Vidopi API
 			const response = await this.helpers.httpRequest({
@@ -80,12 +98,18 @@ export class CutVideo implements INodeType {
 				json: true,
 			});
 
+			const resultData: any = {
+				...response,
+				webhookUrl,
+			};
+
+			// Only include dynamicPath if we generated one (legacy mode)
+			if (dynamicPath) {
+				resultData.dynamicPath = dynamicPath;
+			}
+
 			results.push({
-				json: {
-					...response,
-					webhookUrl,
-					dynamicPath,
-				},
+				json: resultData,
 			});
 		}
 
