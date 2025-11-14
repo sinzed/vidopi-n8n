@@ -22,7 +22,7 @@
     "video-processing",
     "api"
   ],
-  "author": "development@vidopi.com",
+  "author": "Saeed Zahedi development@vidopi.com",
   "license": "MIT",
   "n8n": {
     "n8nNodesApiVersion": 1,
