@@ -4,6 +4,8 @@ const path = require('path');
 const distDir = path.resolve(__dirname, '..', 'dist');
 const logoSource = path.resolve(__dirname, '..', 'logo.png');
 const logoTarget = path.join(distDir, 'logo.png');
+const vidopiDir = path.join(distDir, 'nodes', 'Vidopi');
+const vidopiLogoTarget = path.join(vidopiDir, 'logo.png');
 
 if (!fs.existsSync(distDir)) {
   console.error('dist directory not found. Run the TypeScript build before postbuild.');
@@ -16,6 +18,9 @@ if (!fs.existsSync(logoSource)) {
 }
 
 fs.copyFileSync(logoSource, logoTarget);
+
+fs.mkdirSync(vidopiDir, { recursive: true });
+fs.copyFileSync(logoSource, vidopiLogoTarget);
 
 const esModuleLine =
   'Object.defineProperty(exports, "__esModule", { value: true });';

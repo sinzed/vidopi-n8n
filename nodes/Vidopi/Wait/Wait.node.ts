@@ -18,7 +18,7 @@ export class Wait implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Vidopi Wait',
 		name: 'vidopiWait',
-		icon: 'file:logo.png',
+		icon: 'file:../logo.png',
 		group: ['organization'],
 		version: 1,
 		description: 'Wait for webhook POST call with JSON body before continuing execution',
