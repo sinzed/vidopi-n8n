@@ -8,6 +8,14 @@
     "dist/**/*",
     "logo.png"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vidopi/n8n-nodes-vidopi.git"
+  },
+  "homepage": "https://github.com/Vidopi/n8n-nodes-vidopi#readme",
+  "bugs": {
+    "url": "https://github.com/Vidopi/n8n-nodes-vidopi/issues"
+  },
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",
     "dev": "n8n",
@@ -41,10 +49,8 @@
       "./dist/credentials/VidopiApi.credentials.js"
     ]
   },
-  "dependencies": {
-    "n8n-workflow": "^1.64.0"
-  },
   "devDependencies": {
+    "n8n-workflow": "^1.64.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
