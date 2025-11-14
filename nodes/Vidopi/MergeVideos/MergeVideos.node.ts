@@ -14,6 +14,7 @@ interface VidopiCredentials {
 interface MergeVideosRequestBody {
   public_link_1: string;
   public_link_2: string;
+  webhook_url: string;
 }
 
 interface MergeVideoTaskResponse extends IDataObject {
@@ -21,58 +22,27 @@ interface MergeVideoTaskResponse extends IDataObject {
   status?: string;
 }
 
-interface TaskStatusErrorResult {
-  error?: unknown;
-  [key: string]: unknown;
+interface WebhookDestination {
+  webhookUrl: string;
+  dynamicPath?: string;
 }
 
-interface TaskStatusResponse {
-  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
-  result?: TaskStatusErrorResult | null;
-  download_url?: string;
-  [key: string]: unknown;
-}
-
-async function pollTaskStatus(
+const resolveWebhookDestination = (
   executeFunctions: IExecuteFunctions,
-  taskId: string,
-  credentials: VidopiCredentials,
-  maxAttempts: number = 120,
-  delayMs: number = 5000,
-): Promise<TaskStatusResponse> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const statusResponse = (await executeFunctions.helpers.httpRequest({
-        method: 'GET',
-        url: `https://api.vidopi.com/task-status/${taskId}`,
-        headers: {
-          'X-API-Key': credentials.apiKey as string,
-        },
-        json: true,
-      })) as TaskStatusResponse;
-
-      if (statusResponse.status === 'SUCCESS') {
-        return statusResponse;
-      }
-
-      if (statusResponse.status === 'FAILED') {
-        throw new Error(
-          `Task failed: ${JSON.stringify(statusResponse.result?.error || statusResponse.result)}`,
-        );
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message.startsWith('Task failed:')) {
-        throw error;
-      }
-      if (attempt === maxAttempts - 1) {
-        throw error;
-      }
-    }
-    await executeFunctions.putExecutionToWait(new Date(Date.now() + 5000));
+  resumeUrl?: string,
+): WebhookDestination => {
+  if (resumeUrl && resumeUrl.trim() !== '') {
+    return { webhookUrl: resumeUrl.trim() };
   }
 
-  throw new Error('Task timed out after waiting for the merge to complete.');
-}
+  const dynamicPath = `vidopi-wait-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+  const baseUrl = executeFunctions.getRestApiUrl().replace('/rest', '');
+
+  return {
+    webhookUrl: `${baseUrl}/webhook/${dynamicPath}`,
+    dynamicPath,
+  };
+};
 
 class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
@@ -114,6 +84,14 @@ class MergeVideos implements INodeType {
         description: 'Public link returned by the Upload Video node for the second video',
         placeholder: 'https://api.vidopi.com/files/def456.mp4',
       },
+      {
+        displayName: 'Resume URL (from Wait node)',
+        name: 'resume_url',
+        type: 'string',
+        default: '',
+        description:
+          "Optional: Use {{$execution.resumeUrl}} from n8n's Wait node so Vidopi can resume the workflow when merging finishes. Leave empty to auto-generate a webhook path.",
+      },
     ],
   };
 
@@ -126,10 +104,13 @@ class MergeVideos implements INodeType {
       try {
         const videoUrl1 = this.getNodeParameter('videoUrl1', i) as string;
         const videoUrl2 = this.getNodeParameter('videoUrl2', i) as string;
+        const resumeUrl = this.getNodeParameter('resume_url', i, '') as string;
+        const { webhookUrl, dynamicPath } = resolveWebhookDestination(this, resumeUrl);
 
         const body: MergeVideosRequestBody = {
           public_link_1: videoUrl1,
           public_link_2: videoUrl2,
+          webhook_url: webhookUrl,
         };
 
         const response = (await this.helpers.httpRequest({
@@ -142,24 +123,16 @@ class MergeVideos implements INodeType {
           json: true,
         })) as MergeVideoTaskResponse;
 
-        const taskId = response.task_id;
+        const result: IDataObject = {
+          ...response,
+          webhookUrl,
+        };
 
-        if (!taskId) {
-          returnData.push({ json: response });
-          continue;
+        if (dynamicPath) {
+          result.dynamicPath = dynamicPath;
         }
 
-        const finalResult = await pollTaskStatus(this, taskId, credentials);
-
-        returnData.push({
-          json: {
-            ...response,
-            task_id: taskId,
-            status: finalResult.status,
-            result: finalResult.result,
-            download_url: finalResult.download_url,
-          },
-        });
+        returnData.push({ json: result });
       } catch (error) {
         if (this.continueOnFail()) {
           returnData.push({ json: { error: error instanceof Error ? error.message : String(error) } });

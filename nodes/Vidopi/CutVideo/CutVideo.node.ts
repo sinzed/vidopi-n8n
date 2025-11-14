@@ -10,6 +10,7 @@ export class CutVideo implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Vidopi Cut Video',
 		name: 'cutVideo',
+		icon: 'file:../../../logo.png',
 		group: ['transform'],
 		version: 1,
 		description: 'Send video cut request to Vidopi. Can use n8n Wait node resume URL or generate dynamic webhook path',
