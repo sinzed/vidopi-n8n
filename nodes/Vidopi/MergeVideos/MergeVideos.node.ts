@@ -88,7 +88,7 @@ class MergeVideos implements INodeType {
         displayName: 'Resume URL (from Wait node)',
         name: 'resume_url',
         type: 'string',
-        default: '',
+        default: '={{$execution.resumeUrl}}',
         description:
           "Optional: Use {{$execution.resumeUrl}} from n8n's Wait node so Vidopi can resume the workflow when merging finishes. Leave empty to auto-generate a webhook path.",
       },

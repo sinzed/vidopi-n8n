@@ -49,8 +49,9 @@ export class CutVideo implements INodeType {
 				displayName: 'Resume URL (from Wait node)',
 				name: 'resume_url',
 				type: 'string',
-				default: '',
-				description: 'Optional: Use {{$execution.resumeUrl}} from n8n\'s built-in Wait node. If provided, Vidopi will call this URL when the video cut is complete, resuming the Wait node. If not provided, a dynamic webhook path will be generated instead.',
+				default: '={{$execution.resumeUrl}}',
+				description:
+					"Optional: Use {{$execution.resumeUrl}} from n8n's built-in Wait node. If provided, Vidopi will call this URL when the video cut is complete, resuming the Wait node. If not provided, a dynamic webhook path will be generated instead.",
 				required: false,
 			},
 		],
