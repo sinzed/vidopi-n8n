@@ -10,11 +10,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Vidopi/n8n-nodes-vidopi.git"
+    "url": "git+https://github.com/sinzed/vidopi-n8n.git"
   },
-  "homepage": "https://github.com/Vidopi/n8n-nodes-vidopi#readme",
+  "homepage": "https://github.com/sinzed/vidopi-n8n#readme",
   "bugs": {
-    "url": "https://github.com/Vidopi/n8n-nodes-vidopi/issues"
+    "url": "https://github.com/sinzed/vidopi-n8n/issues"
   },
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",
