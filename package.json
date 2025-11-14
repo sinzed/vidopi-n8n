@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-vidopi",
-  "version": "1.2.03",
+  "version": "1.2.04",
   "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
