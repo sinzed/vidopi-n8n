@@ -1,20 +1,26 @@
 import {
+  IHttpRequestOptions,
   IExecuteFunctions,
   INodeExecutionData,
   INodeType,
   INodeTypeDescription,
   NodeConnectionType,
 } from 'n8n-workflow';
-import FormData = require('form-data');
-import { promises as fs } from 'fs';
-import * as path from 'path';
-
-type UploadSource = 'binary' | 'localFile';
-
 const DEFAULT_CONTENT_TYPE = 'video/mp4';
 
+const getExtension = (fileName: string): string => {
+  const normalizedName = fileName?.split(/[\\/]/).pop() ?? '';
+  const dotIndex = normalizedName.lastIndexOf('.');
+
+  if (dotIndex === -1) {
+    return '';
+  }
+
+  return normalizedName.substring(dotIndex).toLowerCase();
+};
+
 const guessContentType = (fileName: string): string => {
-  const extension = path.extname(fileName).toLowerCase();
+  const extension = getExtension(fileName);
 
   switch (extension) {
     case '.mov':
@@ -47,7 +53,34 @@ const guessContentType = (fileName: string): string => {
   }
 };
 
-class UploadVideo implements INodeType {
+const createMultipartBody = (
+  fileBuffer: Buffer,
+  fileName: string,
+  contentType: string,
+): { body: Buffer; boundary: string } => {
+  const boundary = `vidopi-boundary-${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+  const chunks: Buffer[] = [];
+
+  const appendString = (value: string) => {
+    chunks.push(Buffer.from(value, 'utf8'));
+  };
+
+  const sanitizedFileName = fileName.replace(/"/g, '\\"');
+  appendString(`--${boundary}\r\n`);
+  appendString(`Content-Disposition: form-data; name="file"; filename="${sanitizedFileName}"\r\n`);
+  appendString(`Content-Type: ${contentType}\r\n\r\n`);
+  chunks.push(fileBuffer);
+  appendString('\r\n');
+
+  appendString(`--${boundary}--\r\n`);
+
+  return {
+    body: Buffer.concat(chunks),
+    boundary,
+  };
+};
+
+export class UploadVideo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Upload Video',
     name: 'vidopiUploadVideo',
@@ -70,25 +103,6 @@ class UploadVideo implements INodeType {
     ],
     properties: [
       {
-        displayName: 'Upload Source',
-        name: 'uploadSource',
-        type: 'options',
-        default: 'binary',
-        description: 'Where the video file should be loaded from',
-        options: [
-          {
-            name: 'Binary Data',
-            value: 'binary',
-            description: 'Use binary data produced by a previous node',
-          },
-          {
-            name: 'Local File Path',
-            value: 'localFile',
-            description: 'Load a video from the file system accessible to the n8n server',
-          },
-        ],
-      },
-      {
         displayName: 'Binary Property',
         name: 'binaryPropertyName',
         type: 'string',
@@ -96,41 +110,6 @@ class UploadVideo implements INodeType {
         required: false,
         description: 'Name of the binary property that contains the file to upload.',
         placeholder: 'data',
-        displayOptions: {
-          show: {
-            uploadSource: ['binary'],
-          },
-        },
-      },
-      {
-        displayName: 'File Path',
-        name: 'localFilePath',
-        type: 'string',
-        default: '',
-        required: false,
-        description: 'Absolute or relative path to the video file on disk.',
-        placeholder: '/data/videos/video.mp4',
-        displayOptions: {
-          show: {
-            uploadSource: ['localFile'],
-          },
-        },
-      },
-      {
-        displayName: 'Additional Fields',
-        name: 'additionalFields',
-        type: 'collection',
-        placeholder: 'Add Field',
-        default: {},
-        options: [
-          {
-            displayName: 'Public Link',
-            name: 'publicLink',
-            type: 'boolean',
-            default: true,
-            description: 'Whether to generate a public link for the uploaded video',
-          },
-        ],
       },
     ],
   };
@@ -142,65 +121,35 @@ class UploadVideo implements INodeType {
 
     for (let i = 0; i < items.length; i++) {
       try {
-        const uploadSourceParam = this.getNodeParameter('uploadSource', i, '') as string;
-        const localFilePath = this.getNodeParameter('localFilePath', i, '') as string;
         const binaryPropertyName = (this.getNodeParameter('binaryPropertyName', i, '') as string) || 'data';
-        const additionalFields = this.getNodeParameter('additionalFields', i) as {
-          publicLink?: boolean;
-        };
-
         let fileName = 'video.mp4';
         let fileBuffer: Buffer | undefined;
         let contentType = DEFAULT_CONTENT_TYPE;
 
-        const inferredUploadSource: UploadSource =
-          (uploadSourceParam as UploadSource) || 'binary';
+        const binaryData = items[i].binary;
 
-        if (inferredUploadSource === 'binary') {
-          const binaryData = items[i].binary;
+        if (!binaryPropertyName) {
+          throw new Error('Please specify the Binary Property that contains the file to upload.');
+        }
 
-          if (!binaryPropertyName) {
-            throw new Error('Please specify the Binary Property that contains the file to upload.');
-          }
-
-          if (binaryData && binaryData[binaryPropertyName]) {
-            const binaryItem = binaryData[binaryPropertyName];
-            fileName = binaryItem.fileName || fileName;
-            contentType = binaryItem.mimeType || contentType;
-
-            try {
-              if (this.helpers.getBinaryDataBuffer) {
-                fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-              } else {
-                fileBuffer = Buffer.from(binaryItem.data, 'base64');
-              }
-            } catch (_error) {
-              fileBuffer = Buffer.from(binaryItem.data, 'base64');
-            }
-          } else {
-            throw new Error(
-              `Binary data not found. Ensure the previous node outputs binary data under the property name "${binaryPropertyName}".`,
-            );
-          }
-        } else if (inferredUploadSource === 'localFile') {
-          if (!localFilePath) {
-            throw new Error('Please provide a value for "File Path" when using the Local File Path upload source.');
-          }
-
-          const resolvedPath = path.resolve(localFilePath);
+        if (binaryData && binaryData[binaryPropertyName]) {
+          const binaryItem = binaryData[binaryPropertyName];
+          fileName = binaryItem.fileName || fileName;
+          contentType = binaryItem.mimeType || guessContentType(fileName);
 
           try {
-            fileBuffer = await fs.readFile(resolvedPath);
-          } catch (error) {
-            throw new Error(`Failed to read file at path "${resolvedPath}": ${
-              error instanceof Error ? error.message : String(error)
-            }`);
+            if (this.helpers.getBinaryDataBuffer) {
+              fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
+            } else {
+              fileBuffer = Buffer.from(binaryItem.data, 'base64');
+            }
+          } catch (_error) {
+            fileBuffer = Buffer.from(binaryItem.data, 'base64');
           }
-
-          fileName = path.basename(resolvedPath);
-          contentType = guessContentType(fileName);
         } else {
-          throw new Error(`Unsupported upload source "${uploadSourceParam as string}".`);
+          throw new Error(
+            `Binary data not found. Ensure the previous node outputs binary data under the property name "${binaryPropertyName}".`,
+          );
         }
 
         if (!fileBuffer) {
@@ -208,25 +157,19 @@ class UploadVideo implements INodeType {
         }
 
         // Upload the file
-        const formData = new FormData();
-        formData.append('file', fileBuffer, {
-          filename: fileName,
-          contentType: contentType,
-        });
-        
-        if (additionalFields.publicLink !== undefined) {
-          formData.append('public_link', additionalFields.publicLink.toString());
-        }
-        
-        const response = await this.helpers.httpRequest({
+        const { body, boundary } = createMultipartBody(fileBuffer, fileName, contentType);
+
+        const requestOptions: IHttpRequestOptions = {
           method: 'POST',
           url: 'https://api.vidopi.com/upload-video/',
           headers: {
             'X-API-Key': credentials.apiKey as string,
-            ...formData.getHeaders(),
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
           },
-          body: formData,
-        });
+          body,
+        };
+
+        const response = await this.helpers.httpRequest(requestOptions);
         
         const jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
         returnData.push({ json: jsonResponse });
@@ -242,8 +185,4 @@ class UploadVideo implements INodeType {
     return [returnData];
   }
 }
-
-// Export for CommonJS
-exports.UploadVideo = UploadVideo;
-
 

@@ -39,7 +39,6 @@
     ]
   },
   "dependencies": {
-    "form-data": "^4.0.4",
     "n8n-workflow": "^1.64.0"
   },
   "devDependencies": {
