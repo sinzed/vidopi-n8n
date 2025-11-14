@@ -48,7 +48,7 @@ class MergeVideos implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Vidopi Merge Videos',
     name: 'vidopiMergeVideos',
-    icon: 'file:../../../logo.png',
+    icon: 'file:logo.png',
     group: ['transform'],
     version: 1,
     documentationUrl: 'https://dashboard.vidopi.com/api-docs',
