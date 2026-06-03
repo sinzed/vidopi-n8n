@@ -26,7 +26,7 @@
 6. **Verify installation:**
    - Create a new workflow
    - Search for "Vidopi" in the node palette
-   - You should see all 5 Vidopi nodes
+   - You should see **Vidopi** and **Vidopi Trigger**
 
 ## Method 2: Install via Command Line (Before Starting n8n)
 
@@ -93,10 +93,8 @@ Once installed, you can use the Vidopi nodes:
 
 ## Available Nodes
 
-- **Vidopi Upload Video** - Upload video files for processing
-- **Vidopi Cut Video** - Cut a segment from a video
-- **Vidopi Merge Videos** - Merge two videos together
-- **Vidopi Resize Video** - Resize video dimensions
+- **Vidopi** - Action node with Video (upload, cut, merge, resize) and Task (get status) operations
+- **Vidopi Trigger** - Webhook trigger for async processing completion callbacks
 
 ## Troubleshooting
 

@@ -1,117 +1,64 @@
 # n8n-nodes-vidopi
 
-An n8n custom node package for interacting with the Vidopi video processing API. This package provides nodes for uploading videos, cutting segments, merging videos, resizing videos, and checking task status.
+An n8n community node package for the [Vidopi](https://vidopi.com) video processing API.
 
-## Features
+## Nodes
 
-- **Upload Video**: Upload video files for processing and get public links
-- **Cut Video**: Cut a segment from a video by specifying start and end times
-- **Merge Videos**: Merge two videos together into a single video file
-- **Resize Video**: Resize video dimensions by specifying width and height
+| Node | Type | Purpose |
+|------|------|---------|
+| **Vidopi** | Action | Upload, cut, merge, resize videos, and check task status |
+| **Vidopi Trigger** | Trigger | Receive webhook callbacks when async processing completes |
 
 ## Installation
 
-### For n8n Users
+1. In n8n, open **Settings** → **Community Nodes** → **Install**.
+2. Enter `n8n-nodes-vidopi` and confirm.
+3. Restart n8n if prompted.
+4. Create **Vidopi API** credentials with your API key from [vidopi.com](https://vidopi.com).
 
-1. In n8n, click your profile icon, choose **Settings**, then open **Community Nodes**.
-2. Click **Install**, enter the npm package name `npm-package-name-placeholder`, and confirm the installation.
-3. Restart your n8n instance to load the new nodes.
-4. Configure your Vidopi API credentials:
-   - Go to Credentials in n8n
-   - Add a new "Vidopi API" credential
-   - Enter your API key (get your API key from https://vidopi.com - free tier available)
-   - Save the credentials
-5. Use the nodes in your workflows:
-   - Search for "Vidopi" in the node palette
-   - Select the appropriate node (Upload Video, Cut Video, Merge Videos, or Resize Video)
-   - Configure the node parameters
-   - Connect to your Vidopi API credentials
+## Vidopi (action node)
 
-## Available Nodes
+Use **Resource** and **Operation** to choose what to run.
 
-### Upload Video
+### Video → Upload
 
-Upload video files for processing. Get a public link to use in other operations.
+Upload binary video data from a previous node.
 
-**Parameters:**
-- **Upload Source** (required): Choose between binary data from a previous node or a local file path
-- **Binary Property** (optional): Name of the binary property when using the binary upload source (defaults to `data`)
-- **File Path** (optional): Absolute or relative path on disk when using the local file upload source
-- **Public Link** (optional): Whether to generate a public link for the uploaded video
+- **Binary Property**: binary field name (default: `data`)
 
-**Endpoint:** `POST /upload-video/`
+### Video → Cut / Merge / Resize
 
-### Cut Video
+These operations are asynchronous. They require a **Callback Webhook URL** from the **Vidopi Trigger** node.
 
-Cut a segment from a video by specifying start and end times in seconds.
+1. Add **Vidopi Trigger** to the workflow and activate it.
+2. Copy the trigger’s production webhook URL (or use the default expression `={{ $node["Vidopi Trigger"].webhookUrl }}`).
+3. Run the Vidopi action (cut, merge, or resize) with that URL.
+4. When Vidopi finishes, it POSTs to the trigger and the workflow continues.
 
-**Parameters:**
-- **Video URL** (required): Public link or URL of the video to cut
-- **Start Time** (required): Start time in seconds for the cut segment
-- **End Time** (required): End time in seconds for the cut segment
-- **Output Format** (optional): Output video format (mp4, avi, mov, etc.)
+### Task → Get Status
 
-**Endpoint:** `POST /cut-video/`
+Poll or fetch status for a task ID returned by cut, merge, or resize.
 
-### Merge Videos
+- **Wait For Completion**: poll until done or return immediately
 
-Merge two videos together into a single video file.
+## Example workflow (async cut)
 
-**Parameters:**
-- **First Video URL** (required): Public link or URL of the first video
-- **Second Video URL** (required): Public link or URL of the second video
-- **Output Format** (optional): Output video format (mp4, avi, mov, etc.)
-- **Merge Order** (optional): How to merge the videos (sequential or side by side)
+```
+[Vidopi Trigger]  ←── webhook from Vidopi API
+       ↓
+[Vidopi: Video / Cut]  → uses trigger webhook URL, returns task_id
+```
 
-**Endpoint:** `POST /merge-video/`
+For polling instead of webhooks, use **Task → Get Status** with **Wait For Completion** enabled.
 
-### Resize Video
+## Breaking changes in v2.0.0
 
-Resize video dimensions by specifying width and height in pixels.
+Community review requires a single action node plus one trigger:
 
-**Parameters:**
-- **Video URL** (required): Public link or URL of the video to resize
-- **Width** (required): Width in pixels for the resized video
-- **Height** (required): Height in pixels for the resized video
-- **Maintain Aspect Ratio** (optional): Whether to maintain the original aspect ratio
-- **Output Format** (optional): Output video format (mp4, avi, mov, etc.)
-
-**Endpoint:** `POST /resize-video/`
-
-## API Configuration
-
-All nodes require Vidopi API credentials:
-
-- **API Key**: Your Vidopi API key. Get your API key from [https://vidopi.com](https://vidopi.com) - they offer a free tier which works for most projects
-- **Base URL**: Fixed to https://api.vidopi.com (users cannot change this)
-
-## Usage Examples
-
-### Example 1: Upload and Cut a Video
-
-1. Use the **Upload Video** node to upload your video file
-2. Extract the public link from the response
-3. Use the **Cut Video** node with the public link, start time, and end time
-4. Wait for the node to finish (it now polls automatically and returns the download link)
-
-### Example 2: Merge Two Videos
-
-1. Upload two videos using the **Upload Video** node
-2. Extract the public links from both responses
-3. Use the **Merge Videos** node with both video URLs
-4. Check the task status to get the merged video
-
-### Example 3: Resize a Video
-
-1. Upload a video using the **Upload Video** node
-2. Extract the public link from the response
-3. Use the **Resize Video** node with the video URL and desired dimensions
-4. Wait for the node to finish (it returns the processed video link when done)
+- Removed separate nodes: Upload Video, Cut Video, Merge Videos, Resize Video, Task Status, Vidopi Wait.
+- Use **Vidopi** with Resource/Operation instead.
+- Use **Vidopi Trigger** instead of Vidopi Wait / `$execution.resumeUrl` for async callbacks.
 
 ## License
 
 MIT
-
-## Support
-
-For issues, questions, or contributions, please visit the repository or contact the maintainers.
