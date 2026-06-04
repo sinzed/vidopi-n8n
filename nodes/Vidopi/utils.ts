@@ -1,4 +1,4 @@
-import type { IExecuteFunctions } from 'n8n-workflow';
+import type { IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
 
 export const DEFAULT_CONTENT_TYPE = 'video/mp4';
 
@@ -74,11 +74,14 @@ export const createMultipartBody = (
 	};
 };
 
-export interface VidopiCredentials {
-	apiKey: string;
-}
-
 export type VidopiTaskStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+
+export const vidopiApiRequest = async (
+	ctx: IExecuteFunctions,
+	options: IHttpRequestOptions,
+): Promise<unknown> => {
+	return ctx.helpers.httpRequestWithAuthentication.call(ctx, 'vidopiApi', options);
+};
 
 export interface TaskStatusResponse {
 	status: VidopiTaskStatus;
@@ -88,16 +91,12 @@ export interface TaskStatusResponse {
 }
 
 export const fetchTaskStatus = async (
-	executeFunctions: IExecuteFunctions,
+	ctx: IExecuteFunctions,
 	taskId: string,
-	credentials: VidopiCredentials,
 ): Promise<TaskStatusResponse> => {
-	return (await executeFunctions.helpers.httpRequest({
+	return (await vidopiApiRequest(ctx, {
 		method: 'GET',
 		url: `https://api.vidopi.com/task-status/${taskId}`,
-		headers: {
-			'X-API-Key': credentials.apiKey,
-		},
 		json: true,
 	})) as TaskStatusResponse;
 };

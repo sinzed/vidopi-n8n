@@ -14,7 +14,7 @@ import {
 	fetchTaskStatus,
 	guessContentType,
 	requireWebhookUrl,
-	type VidopiCredentials,
+	vidopiApiRequest,
 } from './utils';
 
 export class Vidopi implements INodeType {
@@ -345,8 +345,6 @@ export class Vidopi implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
-		const credentials = (await this.getCredentials('vidopiApi')) as VidopiCredentials;
-
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -354,19 +352,19 @@ export class Vidopi implements INodeType {
 
 				if (resource === 'video') {
 					if (operation === 'upload') {
-						returnData.push({ json: await uploadVideo(this, i, items, credentials) });
+						returnData.push({ json: await uploadVideo(this, i, items) });
 					} else if (operation === 'cut') {
-						returnData.push({ json: await cutVideo(this, i, credentials) });
+						returnData.push({ json: await cutVideo(this, i) });
 					} else if (operation === 'merge') {
-						returnData.push({ json: await mergeVideos(this, i, credentials) });
+						returnData.push({ json: await mergeVideos(this, i) });
 					} else if (operation === 'resize') {
-						returnData.push({ json: await resizeVideo(this, i, credentials) });
+						returnData.push({ json: await resizeVideo(this, i) });
 					} else {
 						throw new Error(`Unknown video operation: ${operation}`);
 					}
 				} else if (resource === 'task') {
 					if (operation === 'getStatus') {
-						returnData.push({ json: await getTaskStatus(this, i, credentials) });
+						returnData.push({ json: await getTaskStatus(this, i) });
 					} else {
 						throw new Error(`Unknown task operation: ${operation}`);
 					}
@@ -390,10 +388,9 @@ export class Vidopi implements INodeType {
 
 async function uploadVideo(
 	ctx: IExecuteFunctions,
-		itemIndex: number,
-		items: INodeExecutionData[],
-		credentials: VidopiCredentials,
-	): Promise<IDataObject> {
+	itemIndex: number,
+	items: INodeExecutionData[],
+): Promise<IDataObject> {
 		const binaryPropertyName =
 			(ctx.getNodeParameter('binaryPropertyName', itemIndex, '') as string) || 'data';
 		let fileName = 'video.mp4';
@@ -436,21 +433,16 @@ async function uploadVideo(
 			method: 'POST',
 			url: 'https://api.vidopi.com/upload-video/',
 			headers: {
-				'X-API-Key': credentials.apiKey,
 				'Content-Type': `multipart/form-data; boundary=${boundary}`,
 			},
 			body,
 		};
 
-		const response = await ctx.helpers.httpRequest(requestOptions);
+		const response = await vidopiApiRequest(ctx, requestOptions);
 		return typeof response === 'string' ? JSON.parse(response) : (response as IDataObject);
 }
 
-async function cutVideo(
-	ctx: IExecuteFunctions,
-	itemIndex: number,
-	credentials: VidopiCredentials,
-): Promise<IDataObject> {
+async function cutVideo(ctx: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {
 	const publicLink = ctx.getNodeParameter('publicLink', itemIndex) as string;
 	const startTime = ctx.getNodeParameter('startTime', itemIndex) as number;
 	const endTime = ctx.getNodeParameter('endTime', itemIndex) as number;
@@ -459,20 +451,17 @@ async function cutVideo(
 		'cut',
 	);
 
-	const response = await ctx.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://api.vidopi.com/cut-video/',
-			headers: {
-				'X-API-Key': credentials.apiKey,
-			},
-			body: {
-				public_link: publicLink,
-				start_time: startTime,
-				end_time: endTime,
-				webhook_url: webhookUrl,
-			},
-			json: true,
-		});
+	const response = await vidopiApiRequest(ctx, {
+		method: 'POST',
+		url: 'https://api.vidopi.com/cut-video/',
+		body: {
+			public_link: publicLink,
+			start_time: startTime,
+			end_time: endTime,
+			webhook_url: webhookUrl,
+		},
+		json: true,
+	});
 
 	return {
 		...(response as IDataObject),
@@ -480,11 +469,7 @@ async function cutVideo(
 	};
 }
 
-async function mergeVideos(
-	ctx: IExecuteFunctions,
-	itemIndex: number,
-	credentials: VidopiCredentials,
-): Promise<IDataObject> {
+async function mergeVideos(ctx: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {
 	const videoUrl1 = ctx.getNodeParameter('videoUrl1', itemIndex) as string;
 	const videoUrl2 = ctx.getNodeParameter('videoUrl2', itemIndex) as string;
 	const webhookUrl = requireWebhookUrl(
@@ -492,19 +477,16 @@ async function mergeVideos(
 		'merge',
 	);
 
-	const response = await ctx.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://api.vidopi.com/merge-video/',
-			headers: {
-				'X-API-Key': credentials.apiKey,
-			},
-			body: {
-				public_link_1: videoUrl1,
-				public_link_2: videoUrl2,
-				webhook_url: webhookUrl,
-			},
-			json: true,
-		});
+	const response = await vidopiApiRequest(ctx, {
+		method: 'POST',
+		url: 'https://api.vidopi.com/merge-video/',
+		body: {
+			public_link_1: videoUrl1,
+			public_link_2: videoUrl2,
+			webhook_url: webhookUrl,
+		},
+		json: true,
+	});
 
 	return {
 		...(response as IDataObject),
@@ -512,11 +494,7 @@ async function mergeVideos(
 	};
 }
 
-async function resizeVideo(
-	ctx: IExecuteFunctions,
-	itemIndex: number,
-	credentials: VidopiCredentials,
-): Promise<IDataObject> {
+async function resizeVideo(ctx: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {
 	const videoUrl = ctx.getNodeParameter('videoUrl', itemIndex) as string;
 	const width = ctx.getNodeParameter('width', itemIndex) as number;
 	const height = ctx.getNodeParameter('height', itemIndex) as number;
@@ -544,15 +522,12 @@ async function resizeVideo(
 		body.output_format = additionalFields.outputFormat;
 	}
 
-	const response = await ctx.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://api.vidopi.com/resize-video/',
-			headers: {
-				'X-API-Key': credentials.apiKey,
-			},
-			body,
-			json: true,
-		});
+	const response = await vidopiApiRequest(ctx, {
+		method: 'POST',
+		url: 'https://api.vidopi.com/resize-video/',
+		body,
+		json: true,
+	});
 
 	return {
 		...(response as IDataObject),
@@ -560,16 +535,12 @@ async function resizeVideo(
 	};
 }
 
-async function getTaskStatus(
-	ctx: IExecuteFunctions,
-	itemIndex: number,
-	credentials: VidopiCredentials,
-): Promise<IDataObject> {
+async function getTaskStatus(ctx: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {
 	const taskId = ctx.getNodeParameter('taskId', itemIndex) as string;
 	const waitForCompletion = ctx.getNodeParameter('waitForCompletion', itemIndex, true) as boolean;
 
 	if (!waitForCompletion) {
-		const status = await fetchTaskStatus(ctx, taskId, credentials);
+		const status = await fetchTaskStatus(ctx, taskId);
 		return { task_id: taskId, ...status };
 	}
 
@@ -584,7 +555,7 @@ async function getTaskStatus(
 	const pollIntervalMs = pollIntervalSeconds * 1000;
 	const maxAttempts = Math.max(1, Math.ceil(maxWaitTimeSeconds / pollIntervalSeconds));
 
-	let status = await fetchTaskStatus(ctx, taskId, credentials);
+	let status = await fetchTaskStatus(ctx, taskId);
 
 	for (let attempt = 0; attempt < maxAttempts; attempt++) {
 		if (status.status === 'SUCCESS' || status.status === 'FAILED') {
@@ -592,7 +563,7 @@ async function getTaskStatus(
 		}
 
 		await ctx.putExecutionToWait(new Date(Date.now() + pollIntervalMs));
-		status = await fetchTaskStatus(ctx, taskId, credentials);
+		status = await fetchTaskStatus(ctx, taskId);
 	}
 
 	if (status.status !== 'SUCCESS' && status.status !== 'FAILED') {
