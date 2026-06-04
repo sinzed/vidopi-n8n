@@ -1,12 +1,12 @@
 {
   "name": "n8n-nodes-vidopi",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "n8n custom nodes for Vidopi video processing API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
-    "logo.png"
+    "logo.svg"
   ],
   "repository": {
     "type": "git",
@@ -17,9 +17,15 @@
     "url": "https://github.com/sinzed/vidopi-n8n/issues"
   },
   "scripts": {
-    "build": "tsc && node scripts/postbuild.js",
-    "dev": "n8n",
-    "lint": "eslint \"nodes/**/*.ts\" \"credentials/**/*.ts\""
+    "build": "rm -rf dist && tsc && node scripts/postbuild.js",
+    "dev": "./scripts/start-n8n-with-vidopi.sh",
+    "start:n8n": "./scripts/start-n8n-with-vidopi.sh",
+    "lint": "eslint \"nodes/**/*.ts\" \"credentials/**/*.ts\"",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "keywords": [
     "n8n",
@@ -35,6 +41,9 @@
     "email": "development@vidopi.com"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
@@ -46,12 +55,12 @@
     ]
   },
   "devDependencies": {
-    "n8n-workflow": "^1.64.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "eslint": "^9.14.0",
+    "n8n": "^2.23.3",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.46.3"
   }

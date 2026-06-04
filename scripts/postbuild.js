@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const distDir = path.resolve(__dirname, '..', 'dist');
-const logoSource = path.resolve(__dirname, '..', 'logo.png');
-const logoTarget = path.join(distDir, 'logo.png');
+const logoSource = path.resolve(__dirname, '..', 'logo.svg');
+const logoTarget = path.join(distDir, 'logo.svg');
 const vidopiDir = path.join(distDir, 'nodes', 'Vidopi');
-const vidopiLogoTarget = path.join(vidopiDir, 'logo.png');
+const vidopiLogoTarget = path.join(vidopiDir, 'logo.svg');
 
 if (!fs.existsSync(distDir)) {
   console.error('dist directory not found. Run the TypeScript build before postbuild.');
@@ -13,7 +13,7 @@ if (!fs.existsSync(distDir)) {
 }
 
 if (!fs.existsSync(logoSource)) {
-  console.error('logo.png not found at project root.');
+  console.error('logo.svg not found at project root.');
   process.exit(1);
 }
 

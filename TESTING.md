@@ -19,10 +19,13 @@
    npm link n8n-nodes-vidopi
    ```
 
-4. **Start n8n:**
+4. **Start n8n with Vidopi nodes loaded:**
    ```bash
-   n8n start
+   ./scripts/start-n8n-with-vidopi.sh
    ```
+   Or `npm run dev`. The script uses the repo's local `n8n` (devDependency), stages only `package.json` + `dist` for `N8N_CUSTOM_EXTENSIONS` (avoids loading the repo's heavy `node_modules`), and refuses n8n 1.x.
+
+   If `npm install -g n8n@latest` did not change the version you see, your global install may be on a different Node than your shell (`which n8n` vs `npm root -g`). Prefer `./scripts/start-n8n-with-vidopi.sh` or set `N8N_BIN` explicitly.
 
 5. **Verify nodes in the palette:**
    - **Vidopi** (action): Video → Upload / Cut / Merge / Resize; Task → Get Status

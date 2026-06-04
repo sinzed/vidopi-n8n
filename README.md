@@ -22,7 +22,7 @@ Use **Resource** and **Operation** to choose what to run.
 
 ### Video → Upload
 
-Upload binary video data from a previous node.
+Upload binary video data from a previous node using the presigned upload flow (init → direct upload to Cloudflare R2 → complete). Supported formats: MP4, AVI, MOV, MKV, WMV, FLV (max 500MB).
 
 - **Binary Property**: binary field name (default: `data`)
 
@@ -58,6 +58,14 @@ Community review requires a single action node plus one trigger:
 - Removed separate nodes: Upload Video, Cut Video, Merge Videos, Resize Video, Task Status, Vidopi Wait.
 - Use **Vidopi** with Resource/Operation instead.
 - Use **Vidopi Trigger** instead of Vidopi Wait / `$execution.resumeUrl` for async callbacks.
+
+## Publishing to npm
+
+Releases are published via [GitHub Actions](.github/workflows/publish.yml) with [npm provenance](https://docs.npmjs.com/generating-provenance-statements) (required for n8n verified community nodes from May 2026).
+
+1. Configure an npm [Trusted Publisher](https://docs.npmjs.com/trusted-publishers) for `sinzed/vidopi-n8n` workflow `publish.yml`, or set `NPM_TOKEN` in GitHub Actions secrets.
+2. Bump `version` in `package.json` and commit.
+3. Tag and push: `git tag 2.0.2 && git push origin main && git push origin 2.0.2`
 
 ## License
 

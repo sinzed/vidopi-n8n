@@ -1,6 +1,22 @@
-import type { IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
+import type {
+	IDataObject,
+	IExecuteFunctions,
+	IHttpRequestOptions,
+	JsonObject,
+} from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
 
 export const DEFAULT_CONTENT_TYPE = 'video/mp4';
+export const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
+
+const SUPPORTED_VIDEO_EXTENSIONS = new Set([
+	'.mp4',
+	'.avi',
+	'.mov',
+	'.mkv',
+	'.wmv',
+	'.flv',
+]);
 
 const getExtension = (fileName: string): string => {
 	const normalizedName = fileName?.split(/[\\/]/).pop() ?? '';
@@ -47,31 +63,70 @@ export const guessContentType = (fileName: string): string => {
 	}
 };
 
-export const createMultipartBody = (
-	fileBuffer: Buffer,
+export const validateVideoForUpload = (
 	fileName: string,
 	contentType: string,
-): { body: Buffer; boundary: string } => {
-	const boundary = `vidopi-boundary-${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
-	const chunks: Buffer[] = [];
+	fileSize: number,
+): void => {
+	if (fileSize <= 0) {
+		throw new Error('Video file is empty.');
+	}
 
-	const appendString = (value: string) => {
-		chunks.push(Buffer.from(value, 'utf8'));
-	};
+	if (fileSize > MAX_VIDEO_UPLOAD_BYTES) {
+		throw new Error(
+			`Video file exceeds the maximum size of 500MB (file is ${Math.ceil(fileSize / (1024 * 1024))}MB).`,
+		);
+	}
 
-	const sanitizedFileName = fileName.replace(/"/g, '\\"');
-	appendString(`--${boundary}\r\n`);
-	appendString(`Content-Disposition: form-data; name="file"; filename="${sanitizedFileName}"\r\n`);
-	appendString(`Content-Type: ${contentType}\r\n\r\n`);
-	chunks.push(fileBuffer);
-	appendString('\r\n');
+	if (!contentType.startsWith('video/')) {
+		throw new Error(`Content type must start with "video/" (got "${contentType}").`);
+	}
 
-	appendString(`--${boundary}--\r\n`);
+	const extension = getExtension(fileName);
+	if (!extension || !SUPPORTED_VIDEO_EXTENSIONS.has(extension)) {
+		throw new Error(
+			`Unsupported file extension "${extension || '(none)'}". Supported formats: MP4, AVI, MOV, MKV, WMV, FLV.`,
+		);
+	}
+};
 
-	return {
-		body: Buffer.concat(chunks),
-		boundary,
-	};
+export interface UploadInitResponse {
+	upload_url: string;
+	object_key: string;
+}
+
+export const parseUploadInitResponse = (response: unknown): UploadInitResponse => {
+	const data = (
+		typeof response === 'string' ? JSON.parse(response) : response
+	) as IDataObject;
+	const uploadUrl = (data.upload_url ?? data.uploadUrl) as string | undefined;
+	const objectKey = (data.object_key ?? data.objectKey) as string | undefined;
+
+	if (!uploadUrl || !objectKey) {
+		throw new Error('Upload init response is missing upload_url or object_key.');
+	}
+
+	return { upload_url: uploadUrl, object_key: objectKey };
+};
+
+export const putToPresignedUrl = async (
+	ctx: IExecuteFunctions,
+	uploadUrl: string,
+	fileBuffer: Buffer,
+	contentType: string,
+): Promise<void> => {
+	try {
+		await ctx.helpers.httpRequest({
+			method: 'PUT',
+			url: uploadUrl,
+			headers: {
+				'Content-Type': contentType,
+			},
+			body: fileBuffer,
+		});
+	} catch (error) {
+		throw new NodeApiError(ctx.getNode(), error as JsonObject);
+	}
 };
 
 export type VidopiTaskStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
@@ -80,7 +135,11 @@ export const vidopiApiRequest = async (
 	ctx: IExecuteFunctions,
 	options: IHttpRequestOptions,
 ): Promise<unknown> => {
-	return ctx.helpers.httpRequestWithAuthentication.call(ctx, 'vidopiApi', options);
+	try {
+		return await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'vidopiApi', options);
+	} catch (error) {
+		throw new NodeApiError(ctx.getNode(), error as JsonObject);
+	}
 };
 
 export interface TaskStatusResponse {

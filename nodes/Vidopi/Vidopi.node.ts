@@ -1,7 +1,6 @@
 import type {
 	IDataObject,
 	IExecuteFunctions,
-	IHttpRequestOptions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -9,11 +8,13 @@ import type {
 import { NodeConnectionType } from 'n8n-workflow';
 
 import {
-	createMultipartBody,
 	DEFAULT_CONTENT_TYPE,
 	fetchTaskStatus,
 	guessContentType,
+	parseUploadInitResponse,
+	putToPresignedUrl,
 	requireWebhookUrl,
+	validateVideoForUpload,
 	vidopiApiRequest,
 } from './utils';
 
@@ -21,7 +22,7 @@ export class Vidopi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Vidopi',
 		name: 'vidopi',
-		icon: 'file:logo.png',
+		icon: 'file:logo.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -70,7 +71,8 @@ export class Vidopi implements INodeType {
 					{
 						name: 'Upload',
 						value: 'upload',
-						description: 'Upload a video file and receive a public link',
+						description:
+							'Upload a video via presigned URL (init → R2 → complete) and receive a public link',
 						action: 'Upload a video',
 					},
 					{
@@ -345,26 +347,31 @@ export class Vidopi implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
+
 		for (let i = 0; i < items.length; i++) {
+			const pushItem = (json: IDataObject) => {
+				returnData.push({ json, pairedItem: { item: i } });
+			};
+
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
 				const operation = this.getNodeParameter('operation', i) as string;
 
 				if (resource === 'video') {
 					if (operation === 'upload') {
-						returnData.push({ json: await uploadVideo(this, i, items) });
+						pushItem(await uploadVideo(this, i, items));
 					} else if (operation === 'cut') {
-						returnData.push({ json: await cutVideo(this, i) });
+						pushItem(await cutVideo(this, i));
 					} else if (operation === 'merge') {
-						returnData.push({ json: await mergeVideos(this, i) });
+						pushItem(await mergeVideos(this, i));
 					} else if (operation === 'resize') {
-						returnData.push({ json: await resizeVideo(this, i) });
+						pushItem(await resizeVideo(this, i));
 					} else {
 						throw new Error(`Unknown video operation: ${operation}`);
 					}
 				} else if (resource === 'task') {
 					if (operation === 'getStatus') {
-						returnData.push({ json: await getTaskStatus(this, i) });
+						pushItem(await getTaskStatus(this, i));
 					} else {
 						throw new Error(`Unknown task operation: ${operation}`);
 					}
@@ -373,9 +380,7 @@ export class Vidopi implements INodeType {
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({
-						json: { error: error instanceof Error ? error.message : String(error) },
-					});
+					pushItem({ error: error instanceof Error ? error.message : String(error) });
 					continue;
 				}
 				throw error;
@@ -427,19 +432,35 @@ async function uploadVideo(
 			throw new Error('Unable to determine video file content for upload.');
 		}
 
-		const { body, boundary } = createMultipartBody(fileBuffer, fileName, contentType);
+		validateVideoForUpload(fileName, contentType, fileBuffer.length);
 
-		const requestOptions: IHttpRequestOptions = {
+		const initResponse = await vidopiApiRequest(ctx, {
 			method: 'POST',
-			url: 'https://api.vidopi.com/upload-video/',
-			headers: {
-				'Content-Type': `multipart/form-data; boundary=${boundary}`,
+			url: 'https://api.vidopi.com/upload-video/init',
+			body: {
+				filename: fileName,
+				content_type: contentType,
+				file_size: fileBuffer.length,
 			},
-			body,
-		};
+			json: true,
+		});
 
-		const response = await vidopiApiRequest(ctx, requestOptions);
-		return typeof response === 'string' ? JSON.parse(response) : (response as IDataObject);
+		const { upload_url, object_key } = parseUploadInitResponse(initResponse);
+
+		await putToPresignedUrl(ctx, upload_url, fileBuffer, contentType);
+
+		const completeResponse = await vidopiApiRequest(ctx, {
+			method: 'POST',
+			url: 'https://api.vidopi.com/upload-video/complete',
+			body: {
+				object_key,
+			},
+			json: true,
+		});
+
+		return typeof completeResponse === 'string'
+			? JSON.parse(completeResponse)
+			: (completeResponse as IDataObject);
 }
 
 async function cutVideo(ctx: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {

@@ -3,11 +3,13 @@ import {
   ICredentialTestRequest,
   ICredentialType,
   INodeProperties,
+  type Icon,
 } from 'n8n-workflow';
 
 class VidopiApi implements ICredentialType {
   name = 'vidopiApi';
   displayName = 'Vidopi API';
+  icon: Icon = 'file:../logo.svg';
   documentationUrl = 'https://dashboard.vidopi.com/api-docs';
   properties: INodeProperties[] = [
     {

@@ -11,9 +11,10 @@ export class VidopiTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Vidopi Trigger',
 		name: 'vidopiTrigger',
-		icon: 'file:logo.png',
+		icon: 'file:logo.svg',
 		group: ['trigger'],
 		version: 1,
+		documentationUrl: 'https://dashboard.vidopi.com/api-docs',
 		description: 'Starts the workflow when Vidopi sends a webhook callback after video processing completes',
 		defaults: {
 			name: 'Vidopi Trigger',
