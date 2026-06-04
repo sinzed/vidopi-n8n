@@ -32,7 +32,7 @@ export class VidopiTrigger implements INodeType {
 		properties: [
 			{
 				displayName:
-					'Use the production webhook URL shown above (or copy it from this node when the workflow is active) as the Callback Webhook URL in Vidopi video operations (cut, merge, resize).',
+					'Use the production webhook URL shown above (or copy it from this node when the workflow is active) as the Callback Webhook URL in Vidopi async video operations.',
 				name: 'webhookNotice',
 				type: 'notice',
 				default: '',

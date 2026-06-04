@@ -155,7 +155,7 @@ export const fetchTaskStatus = async (
 ): Promise<TaskStatusResponse> => {
 	return (await vidopiApiRequest(ctx, {
 		method: 'GET',
-		url: `https://api.vidopi.com/task-status/${taskId}`,
+		url: `https://api.vidopi.com/task-status/${encodeURIComponent(taskId)}`,
 		json: true,
 	})) as TaskStatusResponse;
 };
@@ -168,4 +168,43 @@ export const requireWebhookUrl = (webhookUrl: string, operation: string): string
 		);
 	}
 	return trimmed;
+};
+
+/** POST an async video job with webhook_url and return API response plus webhookUrl. */
+export const submitAsyncVideoJob = async (
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+	operationLabel: string,
+	url: string,
+	body: IDataObject,
+): Promise<IDataObject> => {
+	const webhookUrl = requireWebhookUrl(
+		ctx.getNodeParameter('webhookUrl', itemIndex) as string,
+		operationLabel,
+	);
+
+	const response = await vidopiApiRequest(ctx, {
+		method: 'POST',
+		url,
+		body: { ...body, webhook_url: webhookUrl },
+		json: true,
+	});
+
+	return { ...(response as IDataObject), webhookUrl };
+};
+
+export const appendDefinedFields = (
+	target: IDataObject,
+	fields: Record<string, unknown>,
+): void => {
+	for (const [key, value] of Object.entries(fields)) {
+		if (value === undefined || value === null || value === '') {
+			continue;
+		}
+		// Skip numeric zero used as "unset" in optional additional fields.
+		if (value === 0) {
+			continue;
+		}
+		target[key] = value;
+	}
 };

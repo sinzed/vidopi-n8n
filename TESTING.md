@@ -28,13 +28,13 @@
    If `npm install -g n8n@latest` did not change the version you see, your global install may be on a different Node than your shell (`which n8n` vs `npm root -g`). Prefer `./scripts/start-n8n-with-vidopi.sh` or set `N8N_BIN` explicitly.
 
 5. **Verify nodes in the palette:**
-   - **Vidopi** (action): Video → Upload / Cut / Merge / Resize; Task → Get Status
+   - **Vidopi** (action): Video → Upload, Cut, Merge, Resize, Crop, Rotate, Speed, Compress, Extract Audio, Compose Audio, Image/Text Overlay, Generate Thumbnail; File → Get Info; Task → Get Status
    - **Vidopi Trigger** (trigger): webhook for async completion
 
 6. **Test async flow:**
    - Create a workflow with **Vidopi Trigger** and activate it
    - Add **Vidopi** with Resource **Video**, Operation **Cut**
-   - Set **Callback Webhook URL** to the trigger URL (or use the default expression)
+   - Paste the Vidopi Trigger **Production URL** into **Callback Webhook URL**
    - Run the workflow and confirm Vidopi receives the webhook URL
 
 ## After Making Changes

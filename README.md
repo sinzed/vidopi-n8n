@@ -6,7 +6,7 @@ An n8n community node package for the [Vidopi](https://vidopi.com) video process
 
 | Node | Type | Purpose |
 |------|------|---------|
-| **Vidopi** | Action | Upload, cut, merge, resize videos, and check task status |
+| **Vidopi** | Action | Upload and process videos (cut, merge, resize, crop, rotate, speed, compress, audio, overlays, thumbnails), file info, and task status |
 | **Vidopi Trigger** | Trigger | Receive webhook callbacks when async processing completes |
 
 ## Installation
@@ -26,18 +26,24 @@ Upload binary video data from a previous node using the presigned upload flow (i
 
 - **Binary Property**: binary field name (default: `data`)
 
-### Video → Cut / Merge / Resize
+### Video → Async processing (Cut, Merge, Resize, Crop, Rotate, Speed, Compress, Extract Audio, Compose Audio, Image/Text Overlay, Generate Thumbnail)
 
 These operations are asynchronous. They require a **Callback Webhook URL** from the **Vidopi Trigger** node.
 
 1. Add **Vidopi Trigger** to the workflow and activate it.
-2. Copy the trigger’s production webhook URL (or use the default expression `={{ $node["Vidopi Trigger"].webhookUrl }}`).
-3. Run the Vidopi action (cut, merge, or resize) with that URL.
+2. Copy the trigger’s **Production URL** from the Vidopi Trigger node and paste it into **Callback Webhook URL** on the Vidopi action node.
+3. Run the Vidopi action with that URL.
 4. When Vidopi finishes, it POSTs to the trigger and the workflow continues.
+
+**Crop** uses a **File ID** (from upload or **File → Get Info**), not a public URL.
+
+### File → Get Info
+
+Returns metadata for an uploaded file by **File ID**.
 
 ### Task → Get Status
 
-Poll or fetch status for a task ID returned by cut, merge, or resize.
+Poll or fetch status for a task ID returned by any async video operation.
 
 - **Wait For Completion**: poll until done or return immediately
 
